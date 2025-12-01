@@ -63,25 +63,22 @@ class StockService:
         ]
 
         try:
-            loc_ids_filtered = odoo.execute_kw(
-                "stock.location",
-                "search",
-                [[("id", "in", loc_ids), ("usage", "=", "internal"), ("active", "=", True)]]
-            )
             locations = odoo.execute_kw(
                 "stock.location",
                 "read",
-                [loc_ids_filtered],
+                [loc_ids],
                 {"fields": fields_loc}
-            ) if loc_ids_filtered else []
+            )
         except Exception as e:
             print(f"Error fetching locations: {e}")
-            return []
+            locations = []
 
         chambers = {}
         for loc in locations:
             clean_loc = clean_record(loc)
             loc_id = clean_loc["id"]
+            if loc.get("usage") != "internal" or not loc.get("active", True):
+                continue
             parent = loc.get("location_id")
             parent_name = parent[1] if parent else "Sin Padre"
             occupied = len(pallets_per_location.get(loc_id, set()))
@@ -103,6 +100,23 @@ class StockService:
                 "occupied_pallets": occupied,
                 "stock_data": {}
             }
+
+        if not chambers:
+            # Fallback minimal data directly from quant info
+            for q in quants:
+                loc = q.get("location_id")
+                if not loc:
+                    continue
+                loc_id, loc_name = loc
+                chambers.setdefault(loc_id, {
+                    "id": loc_id,
+                    "name": loc_name,
+                    "full_name": loc_name,
+                    "parent_name": "N/D",
+                    "capacity_pallets": len(pallets_per_location.get(loc_id, set())) or 50,
+                    "occupied_pallets": len(pallets_per_location.get(loc_id, set())),
+                    "stock_data": {}
+                })
 
         product_ids = {
             q["product_id"][0]

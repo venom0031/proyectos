@@ -1,14 +1,16 @@
 """
 Rutas para el Dashboard de Containers/Ventas
 """
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional
 from backend.services.sales_service import sales_service
+from backend.core.auth import require_user
 
 router = APIRouter(
     prefix="/sales",
     tags=["sales"],
     responses={404: {"description": "Not found"}},
+    dependencies=[Depends(require_user)]
 )
 
 

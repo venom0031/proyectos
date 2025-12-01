@@ -1,14 +1,16 @@
 """
 Rutas para el Dashboard de Stock
 """
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional
 from backend.services.stock_service import stock_service
+from backend.core.auth import require_user
 
 router = APIRouter(
     prefix="/stock",
     tags=["stock"],
     responses={404: {"description": "Not found"}},
+    dependencies=[Depends(require_user)]
 )
 
 @router.get("/dashboard")

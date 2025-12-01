@@ -1,11 +1,16 @@
 """
 Rutas de API para Órdenes de Fabricación
 """
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from typing import List
 from backend.services.of_service import of_service
+from backend.core.auth import require_user
 
-router = APIRouter(prefix="/of", tags=["Órdenes de Fabricación"])
+router = APIRouter(
+    prefix="/of",
+    tags=["Órdenes de Fabricación"],
+    dependencies=[Depends(require_user)]
+)
 
 
 @router.get("/search")

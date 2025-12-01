@@ -1,6 +1,6 @@
 """
-Vista del Dashboard de Stock - Cámaras
-Diseño premium con gráfico interactivo y lista dinámica de lotes
+Vista del Dashboard de Stock - Camaras
+Diseno premium con grafico interactivo y lista dinamica de lotes
 """
 import streamlit as st
 import plotly.graph_objects as go
@@ -10,6 +10,27 @@ import os
 from datetime import datetime, timedelta
 
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
+
+
+def _get_auth_headers():
+    """Headers de autenticacion compartidos desde el dashboard principal."""
+    return st.session_state.get("auth_headers", {})
+
+
+def _session_key(base_name: str) -> str:
+    """Genera llaves unicas por usuario para st.session_state."""
+    headers = _get_auth_headers()
+    email = headers.get("X-User-Email", "anon")
+    return f"{base_name}_{email}"
+
+
+def _api_get(path: str, *, params: dict = None, timeout: int = 60):
+    """Wrapper para requests.get con autenticacion."""
+    url = f"{API_URL}{path}"
+    headers = _get_auth_headers()
+    response = requests.get(url, params=params, timeout=timeout, headers=headers)
+    response.raise_for_status()
+    return response
 
 # ==============================
 #  ESTILOS CSS PERSONALIZADOS
@@ -39,7 +60,7 @@ STOCK_CSS = """
     .stock-kpi-value { font-size: 1.4rem; font-weight: 700; color: #00ff88; }
     .stock-kpi-label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
     
-    /* Indicador de cámara encima del gráfico */
+    /* Indicador de camara encima del grafico */
     .chamber-indicator {
         display: flex;
         flex-direction: column;
@@ -83,7 +104,7 @@ STOCK_CSS = """
         transition: width 0.3s ease;
     }
     
-    /* Lista de lotes dinámica */
+    /* Lista de lotes dinamica */
     .lot-item {
         display: flex;
         align-items: center;
@@ -135,7 +156,7 @@ STOCK_CSS = """
         color: #888;
     }
     
-    /* Sección */
+    /* Seccion */
     .section-header {
         display: flex;
         align-items: center;
@@ -148,7 +169,7 @@ STOCK_CSS = """
     .section-icon { font-size: 1.3rem; }
     .section-title { font-size: 1.1rem; font-weight: 600; color: #fff; }
     
-    /* Selector de categoría activa */
+    /* Selector de categoria activa */
     .category-selector {
         display: flex;
         flex-wrap: wrap;
@@ -178,16 +199,16 @@ STOCK_CSS = """
         border-color: #00cc66;
     }
     
-    /* Colores de antigüedad */
+    /* Colores de antiguedad */
     .age-fresh { color: #00ff88 !important; }  /* < 1 mes - Verde */
     .age-ok { color: #88ff00 !important; }     /* 1-3 meses - Verde-Amarillo */
     .age-warning { color: #ffaa00 !important; } /* 3-6 meses - Naranja */
     .age-old { color: #ff6b6b !important; }     /* 6-12 meses - Rojo claro */
-    .age-critical { color: #ff0000 !important; } /* > 1 año - Rojo */
+    .age-critical { color: #ff0000 !important; } /* > 1 ano - Rojo */
 </style>
 """
 
-# Paleta de colores para categorías (más variada y distinguible)
+# Paleta de colores para categorias (mas variada y distinguible)
 CATEGORY_COLORS = [
     '#00cc66', '#ff6b6b', '#ffaa00', '#8844ff', 
     '#00ccff', '#ff44ff', '#44ffff', '#ccff00', 
@@ -199,7 +220,7 @@ CATEGORY_COLORS = [
 def get_stock_data():
     """Obtiene datos de stock desde la API"""
     try:
-        response = requests.get(f"{API_URL}/stock/dashboard", timeout=60)
+        response = _api_get("/stock/dashboard", timeout=60)
         response.raise_for_status()
         return response.json()
     except Exception as e:
@@ -208,13 +229,13 @@ def get_stock_data():
 
 
 def get_pallets(location_id, category=None):
-    """Obtiene pallets de una ubicación"""
+    """Obtiene pallets de una ubicacion"""
     try:
         params = {"location_id": location_id}
         if category:
             params["category"] = category
         
-        response = requests.get(f"{API_URL}/stock/pallets", params=params, timeout=30)
+        response = _api_get("/stock/pallets", params=params, timeout=30)
         response.raise_for_status()
         return response.json()
     except Exception as e:
@@ -223,13 +244,13 @@ def get_pallets(location_id, category=None):
 
 
 def get_lots_by_category(category: str, location_ids: list = None):
-    """Obtiene lotes agrupados por categoría"""
+    """Obtiene lotes agrupados por categoria"""
     try:
         params = {"category": category}
         if location_ids:
             params["location_ids"] = ",".join(str(x) for x in location_ids)
         
-        response = requests.get(f"{API_URL}/stock/lots", params=params, timeout=60)
+        response = _api_get("/stock/lots", params=params, timeout=60)
         response.raise_for_status()
         return response.json()
     except Exception as e:
@@ -238,7 +259,7 @@ def get_lots_by_category(category: str, location_ids: list = None):
 
 
 def get_age_class(days: int) -> tuple:
-    """Retorna clase CSS y color según antigüedad"""
+    """Retorna clase CSS y color segun antiguedad"""
     if days < 30:
         return "age-fresh", "#00ff88", "< 1 mes"
     elif days < 90:
@@ -248,7 +269,7 @@ def get_age_class(days: int) -> tuple:
     elif days < 365:
         return "age-old", "#ff6b6b", "6-12 meses"
     else:
-        return "age-critical", "#ff0000", "> 1 año"
+        return "age-critical", "#ff0000", "> 1 ano"
 
 
 def render_kpis(chambers_data: list):
@@ -269,36 +290,36 @@ def render_kpis(chambers_data: list):
     st.markdown(f"""
     <div class="stock-kpi-container">
         <div class="stock-kpi-card">
-            <div class="stock-kpi-icon">🏭</div>
+            <div class="stock-kpi-icon"></div>
             <div class="stock-kpi-value">{total_chambers}</div>
             <div class="stock-kpi-label">Ubicaciones</div>
         </div>
         <div class="stock-kpi-card">
-            <div class="stock-kpi-icon">📦</div>
+            <div class="stock-kpi-icon"></div>
             <div class="stock-kpi-value">{total_occupied:,}</div>
             <div class="stock-kpi-label">Pallets Ocupados</div>
         </div>
         <div class="stock-kpi-card">
-            <div class="stock-kpi-icon">📊</div>
+            <div class="stock-kpi-icon"></div>
             <div class="stock-kpi-value">{occupancy_pct:.1f}%</div>
-            <div class="stock-kpi-label">Ocupación</div>
+            <div class="stock-kpi-label">Ocupacion</div>
         </div>
         <div class="stock-kpi-card">
-            <div class="stock-kpi-icon">⚖️</div>
+            <div class="stock-kpi-icon"></div>
             <div class="stock-kpi-value">{total_kg:,.0f}</div>
             <div class="stock-kpi-label">KG Totales</div>
         </div>
         <div class="stock-kpi-card">
-            <div class="stock-kpi-icon">🏷️</div>
+            <div class="stock-kpi-icon"></div>
             <div class="stock-kpi-value">{total_categories}</div>
-            <div class="stock-kpi-label">Categorías</div>
+            <div class="stock-kpi-label">Categorias</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
 
 def render_chamber_indicators(chambers: list):
-    """Renderiza indicadores de capacidad arriba del gráfico"""
+    """Renderiza indicadores de capacidad arriba del grafico"""
     cols = st.columns(min(len(chambers), 6))
     
     for i, c in enumerate(chambers[:6]):
@@ -306,7 +327,7 @@ def render_chamber_indicators(chambers: list):
         occupied = c.get("occupied_pallets", 0)
         pct = (occupied / capacity * 100) if capacity > 0 else 0
         
-        # Color según ocupación
+        # Color segun ocupacion
         if pct < 50:
             fill_color = "#00cc66"
         elif pct < 80:
@@ -327,7 +348,7 @@ def render_chamber_indicators(chambers: list):
 
 
 def render_stock_chart(chambers: list, all_categories: list, category_colors: dict):
-    """Renderiza gráfico de barras apiladas de alta calidad"""
+    """Renderiza grafico de barras apiladas de alta calidad"""
     if not chambers:
         return None
     
@@ -335,7 +356,7 @@ def render_stock_chart(chambers: list, all_categories: list, category_colors: di
     
     fig = go.Figure()
     
-    # Barras apiladas por categoría
+    # Barras apiladas por categoria
     for cat in all_categories:
         y_values = [c["stock_data"].get(cat, 0) for c in chambers]
         color = category_colors.get(cat, "#888888")
@@ -350,7 +371,7 @@ def render_stock_chart(chambers: list, all_categories: list, category_colors: di
             ),
             hovertemplate=(
                 f'<b>{cat}</b><br>'
-                'Cámara: %{x}<br>'
+                'Camara: %{x}<br>'
                 'Stock: %{y:,.0f} kg<extra></extra>'
             )
         ))
@@ -401,9 +422,9 @@ def render_stock_chart(chambers: list, all_categories: list, category_colors: di
 
 
 def render_lots_list(lots: list, category: str):
-    """Renderiza lista dinámica de lotes con colores por antigüedad"""
+    """Renderiza lista dinamica de lotes con colores por antiguedad"""
     if not lots:
-        st.info(f"No hay lotes para la categoría: {category}")
+        st.info(f"No hay lotes para la categoria: {category}")
         return
     
     # Resumen
@@ -412,11 +433,11 @@ def render_lots_list(lots: list, category: str):
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("🔢 Lotes", len(lots))
+        st.metric(" Lotes", len(lots))
     with col2:
-        st.metric("📦 Pallets", total_pallets)
+        st.metric(" Pallets", total_pallets)
     with col3:
-        st.metric("⚖️ Total KG", f"{total_kg:,.0f}")
+        st.metric(" Total KG", f"{total_kg:,.0f}")
     
     st.markdown("---")
     
@@ -431,9 +452,9 @@ def render_lots_list(lots: list, category: str):
         st.markdown(f"""
         <div class="lot-item" style="border-left-color: {border_color};">
             <div class="lot-info">
-                <div class="lot-name">📋 {lot['lot']}</div>
+                <div class="lot-name"> {lot['lot']}</div>
                 <div class="lot-product">{lot['product'][:40]}...</div>
-                <div class="lot-product">📍 {locations_str}</div>
+                <div class="lot-product"> {locations_str}</div>
             </div>
             <div class="lot-stats">
                 <div class="lot-qty">{lot['quantity']:,.0f} kg</div>
@@ -444,13 +465,13 @@ def render_lots_list(lots: list, category: str):
         """, unsafe_allow_html=True)
     
     if len(lots) > 20:
-        st.caption(f"... y {len(lots) - 20} lotes más")
+        st.caption(f"... y {len(lots) - 20} lotes mas")
 
 
 def render_pallets_table(pallets: list):
-    """Renderiza tabla de pallets con colores por antigüedad"""
+    """Renderiza tabla de pallets con colores por antiguedad"""
     if not pallets:
-        st.info("No hay pallets para mostrar en esta ubicación.")
+        st.info("No hay pallets para mostrar en esta ubicacion.")
         return
     
     df = pd.DataFrame(pallets)
@@ -461,19 +482,19 @@ def render_pallets_table(pallets: list):
     
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("📦 Total Pallets", f"{total_pallets}")
+        st.metric(" Total Pallets", f"{total_pallets}")
     with col2:
-        st.metric("⚖️ Total Kilos", f"{total_kg:,.2f} kg")
+        st.metric(" Total Kilos", f"{total_kg:,.2f} kg")
     
-    # Añadir columna de antigüedad visual
+    # Anadir columna de antiguedad visual
     def age_indicator(days):
         _, color, label = get_age_class(days)
-        return f"🟢 {label}" if days < 30 else f"🟡 {label}" if days < 90 else f"🟠 {label}" if days < 180 else f"🔴 {label}"
+        return f" {label}" if days < 30 else f" {label}" if days < 90 else f" {label}" if days < 180 else f" {label}"
     
     if "days_old" in df.columns:
-        df["Antigüedad"] = df["days_old"].apply(age_indicator)
+        df["Antiguedad"] = df["days_old"].apply(age_indicator)
     
-    columns_to_show = ["pallet", "product", "lot", "quantity", "in_date", "Antigüedad"]
+    columns_to_show = ["pallet", "product", "lot", "quantity", "in_date", "Antiguedad"]
     available_cols = [c for c in columns_to_show if c in df.columns]
     
     st.dataframe(
@@ -486,38 +507,41 @@ def render_pallets_table(pallets: list):
             "lot": st.column_config.TextColumn("Lote", width="medium"),
             "quantity": st.column_config.NumberColumn("Kilos", format="%.2f kg"),
             "in_date": st.column_config.TextColumn("Fecha Entrada", width="small"),
-            "Antigüedad": st.column_config.TextColumn("Antigüedad", width="small")
+            "Antiguedad": st.column_config.TextColumn("Antiguedad", width="small")
         },
         hide_index=True
     )
 
 
-def render_stock_dashboard():
+def render_stock_dashboard(auth_headers=None):
     """Renderiza el dashboard de stock"""
+    if auth_headers:
+        st.session_state["auth_headers"] = auth_headers
     
     # Inyectar CSS
     st.markdown(STOCK_CSS, unsafe_allow_html=True)
+    data_key = _session_key("stock_data")
+    category_key = _session_key("selected_category")
     
     # Sidebar
-    st.sidebar.markdown("### 🔍 Filtros de Stock")
+    st.sidebar.markdown("###  Filtros de Stock")
     
-    if st.sidebar.button("🔄 Recargar Datos", use_container_width=True, type="primary"):
-        for key in ["stock_data", "selected_category", "lots_data"]:
-            if key in st.session_state:
-                del st.session_state[key]
+    if st.sidebar.button(" Recargar Datos", use_container_width=True, type="primary"):
+        for key in [data_key, category_key]:
+            st.session_state.pop(key, None)
         st.rerun()
     
     # Cargar datos
-    if "stock_data" not in st.session_state:
-        with st.spinner("🔄 Cargando stock desde Odoo..."):
-            st.session_state["stock_data"] = get_stock_data()
+    if data_key not in st.session_state:
+        with st.spinner(" Cargando stock desde Odoo..."):
+            st.session_state[data_key] = get_stock_data()
     
-    chambers_data = st.session_state.get("stock_data", [])
+    chambers_data = st.session_state.get(data_key, [])
     
     if not chambers_data:
         st.markdown("""
         <div style="text-align: center; padding: 50px; background: rgba(255,255,255,0.05); border-radius: 15px; margin: 20px 0;">
-            <div style="font-size: 4rem; margin-bottom: 20px;">📦</div>
+            <div style="font-size: 4rem; margin-bottom: 20px;"></div>
             <h3 style="color: #fff;">No hay datos de stock</h3>
             <p style="color: #888;">Haz clic en "Recargar Datos" para obtener el inventario.</p>
         </div>
@@ -531,7 +555,7 @@ def render_stock_dashboard():
     parents = sorted(list(set([c.get("parent_name", "Sin Padre") for c in chambers_data])))
     
     selected_parents = st.sidebar.multiselect(
-        "Zona / Ubicación Padre",
+        "Zona / Ubicacion Padre",
         options=parents,
         default=parents,
         key="stock_filter_parents"
@@ -541,7 +565,7 @@ def render_stock_dashboard():
     chamber_names = sorted([c["name"] for c in filtered_chambers])
     
     selected_chambers = st.sidebar.multiselect(
-        "Cámaras Específicas",
+        "Camaras Especificas",
         options=chamber_names,
         default=chamber_names,
         key="stock_filter_chambers"
@@ -550,26 +574,26 @@ def render_stock_dashboard():
     final_chambers = [c for c in filtered_chambers if c["name"] in selected_chambers]
     
     if not final_chambers:
-        st.info("Selecciona al menos una cámara para visualizar.")
+        st.info("Selecciona al menos una camara para visualizar.")
         return
     
-    # Obtener todas las categorías y asignar colores
+    # Obtener todas las categorias y asignar colores
     all_categories = set()
     for c in final_chambers:
         all_categories.update(c.get("stock_data", {}).keys())
     all_categories = sorted(list(all_categories))
     
-    # Mapa de colores por categoría
+    # Mapa de colores por categoria
     category_colors = {cat: CATEGORY_COLORS[i % len(CATEGORY_COLORS)] for i, cat in enumerate(all_categories)}
     
     st.markdown("---")
     
     # --- Indicadores de Capacidad ---
-    st.markdown('<div class="section-header"><span class="section-icon">📊</span><span class="section-title">Capacidad por Cámara</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header"><span class="section-icon"></span><span class="section-title">Capacidad por Camara</span></div>', unsafe_allow_html=True)
     render_chamber_indicators(final_chambers)
     
-    # --- Gráfico Principal (más ancho) ---
-    st.markdown('<div class="section-header"><span class="section-icon">📈</span><span class="section-title">Stock por Ubicación</span></div>', unsafe_allow_html=True)
+    # --- Grafico Principal (mas ancho) ---
+    st.markdown('<div class="section-header"><span class="section-icon"></span><span class="section-title">Stock por Ubicacion</span></div>', unsafe_allow_html=True)
     
     fig = render_stock_chart(final_chambers, all_categories, category_colors)
     if fig:
@@ -577,26 +601,30 @@ def render_stock_dashboard():
     
     st.markdown("---")
     
-    # --- Selector de Categoría para Lista Dinámica ---
-    st.markdown('<div class="section-header"><span class="section-icon">🏷️</span><span class="section-title">Seleccionar Categoría para Ver Lotes</span></div>', unsafe_allow_html=True)
+    # --- Selector de Categoria para Lista Dinamica ---
+    st.markdown('<div class="section-header"><span class="section-icon"></span><span class="section-title">Seleccionar Categoria para Ver Lotes</span></div>', unsafe_allow_html=True)
     
-    # Crear chips de categorías
+    # Crear chips de categorias
     cat_cols = st.columns(min(len(all_categories), 4))
     
-    if "selected_category" not in st.session_state:
-        st.session_state["selected_category"] = all_categories[0] if all_categories else None
+    if category_key not in st.session_state:
+        st.session_state[category_key] = all_categories[0] if all_categories else None
+    
+    current_category = st.session_state.get(category_key)
+    if current_category not in all_categories and all_categories:
+        current_category = all_categories[0]
+        st.session_state[category_key] = current_category
     
     selected_cat = st.selectbox(
-        "Categoría",
+        "Categoria",
         options=all_categories,
-        index=all_categories.index(st.session_state["selected_category"]) if st.session_state["selected_category"] in all_categories else 0,
-        key="category_selector",
+        index=all_categories.index(current_category) if current_category in all_categories else 0,
         label_visibility="collapsed"
     )
     
-    st.session_state["selected_category"] = selected_cat
+    st.session_state[category_key] = selected_cat
     
-    # Mostrar color de la categoría seleccionada
+    # Mostrar color de la categoria seleccionada
     if selected_cat:
         cat_color = category_colors.get(selected_cat, "#888")
         st.markdown(f"""
@@ -606,11 +634,11 @@ def render_stock_dashboard():
         </div>
         """, unsafe_allow_html=True)
     
-    # --- Lista Dinámica de Lotes ---
+    # --- Lista Dinamica de Lotes ---
     col_lots, col_legend = st.columns([3, 1])
     
     with col_lots:
-        st.markdown('<div class="section-header"><span class="section-icon">📋</span><span class="section-title">Lotes por Antigüedad</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><span class="section-icon"></span><span class="section-title">Lotes por Antiguedad</span></div>', unsafe_allow_html=True)
         
         if selected_cat:
             location_ids = [c["id"] for c in final_chambers]
@@ -621,7 +649,7 @@ def render_stock_dashboard():
             render_lots_list(lots, selected_cat)
     
     with col_legend:
-        st.markdown('<div class="section-header"><span class="section-icon">🎨</span><span class="section-title">Leyenda</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><span class="section-icon"></span><span class="section-title">Leyenda</span></div>', unsafe_allow_html=True)
         
         st.markdown("""
         <div style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
@@ -643,7 +671,7 @@ def render_stock_dashboard():
             </div>
             <div style="margin: 8px 0; display: flex; align-items: center; gap: 8px;">
                 <div style="width: 12px; height: 12px; background: #ff0000; border-radius: 50%;"></div>
-                <span style="color: #ff0000; font-size: 0.85rem;">> 1 año (Crítico)</span>
+                <span style="color: #ff0000; font-size: 0.85rem;">> 1 ano (Critico)</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -651,13 +679,13 @@ def render_stock_dashboard():
     st.markdown("---")
     
     # --- Detalle de Pallets (existente) ---
-    st.markdown('<div class="section-header"><span class="section-icon">📦</span><span class="section-title">Detalle de Pallets por Cámara</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header"><span class="section-icon"></span><span class="section-title">Detalle de Pallets por Camara</span></div>', unsafe_allow_html=True)
     
     col_sel1, col_sel2 = st.columns(2)
     
     with col_sel1:
         selected_chamber_name = st.selectbox(
-            "Seleccionar Cámara",
+            "Seleccionar Camara",
             options=[c["name"] for c in final_chambers],
             key="stock_detail_chamber"
         )
@@ -667,7 +695,7 @@ def render_stock_dashboard():
         chamber_categories = ["Todas"] + list(selected_chamber.get("stock_data", {}).keys()) if selected_chamber else ["Todas"]
         
         selected_category = st.selectbox(
-            "Filtrar por Categoría",
+            "Filtrar por Categoria",
             options=chamber_categories,
             key="stock_detail_category"
         )

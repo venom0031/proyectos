@@ -1,6 +1,6 @@
 """
 Vista del Dashboard de Containers/Ventas
-Diseño responsive y visual mejorado
+Diseno responsive y visual mejorado
 """
 import streamlit as st
 import plotly.graph_objects as go
@@ -10,6 +10,18 @@ import os
 from datetime import date, timedelta
 
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
+
+
+def _get_auth_headers():
+    """Headers compartidos desde la vista principal."""
+    return st.session_state.get("auth_headers", {})
+
+
+def _session_key(base_name: str) -> str:
+    """Genera llaves de estado por usuario."""
+    headers = _get_auth_headers()
+    email = headers.get("X-User-Email", "anon")
+    return f"{base_name}_{email}"
 
 # ==============================
 #  ESTILOS CSS PERSONALIZADOS
@@ -197,7 +209,12 @@ def get_containers(start_date=None, end_date=None, partner_id=None, state=None):
         if state:
             params["state"] = state
             
-        response = requests.get(f"{API_URL}/sales/containers", params=params, timeout=60)
+        response = requests.get(
+            f"{API_URL}/sales/containers",
+            params=params,
+            timeout=60,
+            headers=_get_auth_headers()
+        )
         response.raise_for_status()
         return response.json()
     except Exception as e:
@@ -206,7 +223,7 @@ def get_containers(start_date=None, end_date=None, partner_id=None, state=None):
 
 
 def get_state_color(avance_pct: float) -> str:
-    """Retorna color según el avance"""
+    """Retorna color segun el avance"""
     if avance_pct >= 100:
         return "#00ff88"
     elif avance_pct >= 75:
@@ -220,7 +237,7 @@ def get_state_color(avance_pct: float) -> str:
 
 
 def get_state_class(avance_pct: float) -> str:
-    """Retorna clase CSS según el avance"""
+    """Retorna clase CSS segun el avance"""
     if avance_pct >= 75:
         return "success"
     elif avance_pct >= 40:
@@ -259,44 +276,44 @@ def render_kpi_cards(containers: list):
     st.markdown(f"""
     <div class="kpi-container">
         <div class="kpi-card">
-            <div class="kpi-icon">📦</div>
+            <div class="kpi-icon"></div>
             <div class="kpi-value">{total_containers}</div>
             <div class="kpi-label">Containers Totales</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-icon">🏭</div>
+            <div class="kpi-icon"></div>
             <div class="kpi-value">{en_progreso}</div>
-            <div class="kpi-label">En Producción</div>
+            <div class="kpi-label">En Produccion</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-icon">✅</div>
+            <div class="kpi-icon"></div>
             <div class="kpi-value">{completados}</div>
             <div class="kpi-label">Completados</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-icon">⏳</div>
+            <div class="kpi-icon"></div>
             <div class="kpi-value">{sin_iniciar}</div>
             <div class="kpi-label">Sin Iniciar</div>
         </div>
     </div>
     <div class="kpi-container">
         <div class="kpi-card">
-            <div class="kpi-icon">📊</div>
+            <div class="kpi-icon"></div>
             <div class="kpi-value {avance_class}">{avance_global:.1f}%</div>
             <div class="kpi-label">Avance Global</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-icon">🎯</div>
+            <div class="kpi-icon"></div>
             <div class="kpi-value">{total_kg:,.0f}</div>
             <div class="kpi-label">KG Totales</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-icon">✔️</div>
+            <div class="kpi-icon"></div>
             <div class="kpi-value">{total_producidos:,.0f}</div>
             <div class="kpi-label">KG Producidos</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-icon">📋</div>
+            <div class="kpi-icon"></div>
             <div class="kpi-value warning">{pendientes:,.0f}</div>
             <div class="kpi-label">KG Pendientes</div>
         </div>
@@ -325,7 +342,7 @@ def render_container_card(container: dict):
     st.markdown(f"""
     <div class="container-card {state_class}">
         <div class="container-header">
-            <div class="container-title">🚢 {name}</div>
+            <div class="container-title"> {name}</div>
             <div class="container-badge badge-{state_class}">{avance:.1f}% completado</div>
         </div>
         <div style="color: #aaa; margin-bottom: 10px;">
@@ -353,15 +370,15 @@ def render_container_card(container: dict):
             </div>
         </div>
         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <span style="color: #888;">📦 Producto:</span> <span style="color: #fff;">{producto}</span>
-            <span style="margin-left: 20px; color: #888;">📅 Entrega:</span> <span style="color: #fff;">{fecha_entrega}</span>
+            <span style="color: #888;"> Producto:</span> <span style="color: #fff;">{producto}</span>
+            <span style="margin-left: 20px; color: #888;"> Entrega:</span> <span style="color: #fff;">{fecha_entrega}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
 
 def render_avance_chart(containers: list):
-    """Renderiza gráfico de avance por container"""
+    """Renderiza grafico de avance por container"""
     if not containers:
         return
     
@@ -395,7 +412,7 @@ def render_avance_chart(containers: list):
         customdata=list(zip(clientes, kg_prod, kg_total))
     ))
     
-    # Línea de meta
+    # Linea de meta
     fig.add_vline(x=100, line_dash="dash", line_color="rgba(255,255,255,0.3)",
                   annotation_text="Meta", annotation_position="top")
     
@@ -482,28 +499,30 @@ def render_detail_gauge(avance: float):
     return fig
 
 
-def render_sales_dashboard():
+def render_sales_dashboard(auth_headers=None):
     """Renderiza el dashboard de containers/ventas"""
+    if auth_headers:
+        st.session_state["auth_headers"] = auth_headers
     
     # Inyectar CSS
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+    data_key = _session_key("containers_data")
     
     # Header
     st.markdown("""
     <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #fff; margin: 0;">🚢 Dashboard de Containers</h1>
-        <p style="color: #888; margin-top: 10px;">Seguimiento de producción por pedido de venta</p>
+        <h1 style="color: #fff; margin: 0;"> Dashboard de Containers</h1>
+        <p style="color: #888; margin-top: 10px;">Seguimiento de produccion por pedido de venta</p>
     </div>
     """, unsafe_allow_html=True)
     
     # --- Sidebar: Filtros ---
-    st.sidebar.markdown("### 🔍 Filtros")
+    st.sidebar.markdown("###  Filtros")
     
-    # Botón de búsqueda principal
-    if st.sidebar.button("🔄 Cargar Containers", use_container_width=True, type="primary"):
+    # Boton de busqueda principal
+    if st.sidebar.button(" Cargar Containers", use_container_width=True, type="primary"):
         st.session_state["load_containers"] = True
-        if "containers_data" in st.session_state:
-            del st.session_state["containers_data"]
+        st.session_state.pop(data_key, None)
     
     st.sidebar.markdown("---")
     
@@ -521,18 +540,18 @@ def render_sales_dashboard():
     )
     
     # --- Cargar datos ---
-    if st.session_state.get("load_containers", False) or "containers_data" not in st.session_state:
-        with st.spinner("🔄 Cargando containers desde Odoo..."):
+    if st.session_state.get("load_containers", False) or data_key not in st.session_state:
+        with st.spinner(" Cargando containers desde Odoo..."):
             containers = get_containers(state=state_options[selected_state])
-            st.session_state["containers_data"] = containers
+            st.session_state[data_key] = containers
             st.session_state["load_containers"] = False
     
-    containers = st.session_state.get("containers_data", [])
+    containers = st.session_state.get(data_key, [])
     
     if not containers:
         st.markdown("""
         <div style="text-align: center; padding: 50px; background: rgba(255,255,255,0.05); border-radius: 15px; margin: 20px 0;">
-            <div style="font-size: 4rem; margin-bottom: 20px;">📦</div>
+            <div style="font-size: 4rem; margin-bottom: 20px;"></div>
             <h3 style="color: #fff;">No hay containers con fabricaciones</h3>
             <p style="color: #888;">Haz clic en "Cargar Containers" para buscar pedidos con fabricaciones vinculadas.</p>
         </div>
@@ -548,13 +567,13 @@ def render_sales_dashboard():
     col_left, col_right = st.columns([3, 2])
     
     with col_left:
-        st.markdown('<div class="section-header"><span class="section-icon">📊</span><span class="section-title">Avance por Container</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><span class="section-icon"></span><span class="section-title">Avance por Container</span></div>', unsafe_allow_html=True)
         render_avance_chart(containers)
     
     with col_right:
-        st.markdown('<div class="section-header"><span class="section-icon">📋</span><span class="section-title">Resumen Rápido</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><span class="section-icon"></span><span class="section-title">Resumen Rapido</span></div>', unsafe_allow_html=True)
         
-        # Top 3 containers más avanzados
+        # Top 3 containers mas avanzados
         sorted_containers = sorted(containers, key=lambda x: x.get("avance_pct", 0), reverse=True)[:3]
         
         for c in sorted_containers:
@@ -567,7 +586,7 @@ def render_sales_dashboard():
                     <span style="color: {color}; font-weight: 700;">{avance:.1f}%</span>
                 </div>
                 <div style="color: #888; font-size: 0.85rem; margin-top: 5px;">
-                    {c.get('partner_name', 'N/A')} • {c.get('num_fabricaciones', 0)} fab.
+                    {c.get('partner_name', 'N/A')}  {c.get('num_fabricaciones', 0)} fab.
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -575,7 +594,7 @@ def render_sales_dashboard():
     st.markdown("---")
     
     # --- Lista de Containers ---
-    st.markdown('<div class="section-header"><span class="section-icon">🚢</span><span class="section-title">Detalle de Containers</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header"><span class="section-icon"></span><span class="section-title">Detalle de Containers</span></div>', unsafe_allow_html=True)
     
     # Selector de container
     container_options = {f"{c['name']} - {c['partner_name']} ({c['avance_pct']:.1f}%)": c for c in containers}
@@ -598,7 +617,7 @@ def render_sales_dashboard():
         col_gauge, col_prods = st.columns([1, 2])
         
         with col_gauge:
-            st.markdown("#### 📈 Avance de Producción")
+            st.markdown("####  Avance de Produccion")
             fig_gauge = render_detail_gauge(selected.get("avance_pct", 0))
             st.plotly_chart(fig_gauge, use_container_width=True)
             
@@ -617,6 +636,6 @@ def render_sales_dashboard():
             """, unsafe_allow_html=True)
         
         with col_prods:
-            st.markdown(f"#### 🏭 Fabricaciones Vinculadas ({len(selected.get('productions', []))})")
+            st.markdown(f"####  Fabricaciones Vinculadas ({len(selected.get('productions', []))})")
             render_productions_table(selected.get("productions", []))
 

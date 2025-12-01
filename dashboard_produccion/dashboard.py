@@ -19,6 +19,39 @@ load_dotenv()
 # ==============================
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
+
+def build_auth_headers(email: str, token: str) -> dict:
+    """Crea los headers esperados por la API."""
+    return {
+        "X-User-Email": email,
+        "X-User-Token": token
+    }
+
+
+def verify_user_credentials(email: str, token: str) -> bool:
+    """Valida credenciales contra el backend (que a su vez valida con Odoo)."""
+    try:
+        headers = build_auth_headers(email, token)
+        response = requests.get(
+            f"{API_URL}/auth/check",
+            headers=headers,
+            timeout=20
+        )
+        response.raise_for_status()
+        return True
+    except requests.exceptions.HTTPError as http_err:
+        detail = ""
+        if http_err.response is not None:
+            try:
+                data = http_err.response.json()
+                detail = data.get("detail", "")
+            except Exception:
+                detail = http_err.response.text
+        st.sidebar.error(f"Credenciales invalidas: {detail or http_err}")
+    except Exception as exc:
+        st.sidebar.error(f"No se pudo validar con Odoo: {exc}")
+    return False
+
 # ==============================
 #  CONFIGURACION UI
 # ==============================
@@ -110,13 +143,15 @@ st.markdown("""
 #  FUNCIONES API
 # ==============================
 @st.cache_data(ttl=300)
-def search_ofs(start_date: str, end_date: str):
+def search_ofs(start_date: str, end_date: str, user_email: str, user_token: str):
     """Busca ordenes de fabricacion por rango de fechas"""
     try:
+        headers = build_auth_headers(user_email, user_token)
         response = requests.get(
             f"{API_URL}/of/search",
             params={"start_date": start_date, "end_date": end_date},
-            timeout=30
+            timeout=30,
+            headers=headers
         )
         response.raise_for_status()
         return response.json()
@@ -125,12 +160,14 @@ def search_ofs(start_date: str, end_date: str):
         return []
 
 @st.cache_data(ttl=300)
-def get_of_data(of_id: int):
+def get_of_data(of_id: int, user_email: str, user_token: str):
     """Obtiene el detalle completo de una orden de fabricacion"""
     try:
+        headers = build_auth_headers(user_email, user_token)
         response = requests.get(
             f"{API_URL}/of/{of_id}",
-            timeout=60
+            timeout=60,
+            headers=headers
         )
         response.raise_for_status()
         return response.json()
@@ -157,6 +194,60 @@ def get_name(val):
         return val.get("name", "N/A")
     return "N/A"
 
+
+# ==============================
+#  AUTENTICACION BASICA
+# ==============================
+if "user_email" not in st.session_state:
+    st.session_state["user_email"] = ""
+if "user_token" not in st.session_state:
+    st.session_state["user_token"] = ""
+
+st.sidebar.title("Acceso")
+email_input = st.sidebar.text_input(
+    "Correo",
+    value=st.session_state.get("user_email", ""),
+    key="login_email"
+)
+token_input = st.sidebar.text_input(
+    "API Key de Odoo",
+    type="password",
+    value=st.session_state.get("user_token", ""),
+    key="login_token",
+    help="Generala en Odoo > Preferencias > Claves API"
+)
+st.sidebar.caption("La API Key reemplaza tu contrasena en las integraciones.")
+login_btn = st.sidebar.button("Iniciar sesion", key="login_btn")
+logout_btn = st.sidebar.button("Cerrar sesion", key="logout_btn")
+
+if login_btn:
+    if email_input.strip() and token_input.strip():
+        if verify_user_credentials(email_input.strip(), token_input.strip()):
+            st.session_state["user_email"] = email_input.strip()
+            st.session_state["user_token"] = token_input.strip()
+            st.cache_data.clear()
+            st.sidebar.success("Sesion iniciada")
+            st.rerun()
+    else:
+        st.sidebar.error("Ingresa correo y token")
+
+if logout_btn:
+    for key in ["user_email", "user_token", "auth_headers", "stock_data", "selected_category", "lots_data", "containers_data", "ofs_list", "current_of_data"]:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.cache_data.clear()
+    st.rerun()
+
+user_email = st.session_state.get("user_email")
+user_token = st.session_state.get("user_token")
+
+if not user_email or not user_token:
+    st.warning("Ingresa tu correo y API Key de Odoo en el panel lateral para ver los datos.")
+    st.stop()
+
+auth_headers = build_auth_headers(user_email, user_token)
+st.session_state["auth_headers"] = auth_headers
+
 # ==============================
 #  NAVEGACION ENTRE DASHBOARDS
 # ==============================
@@ -166,23 +257,20 @@ st.sidebar.markdown("---")
 # Selector de dashboard
 dashboard_option = st.sidebar.radio(
     "Seleccionar Dashboard:",
-    [" Dashboard de Produccion", " Dashboard de Stock", " Dashboard de Containers", " Configuracion"],
+    [
+        " Dashboard de Produccion",
+        " Dashboard de Stock",
+        " Dashboard de Containers"
+    ],
     key="dashboard_selector"
 )
 
 st.sidebar.markdown("---")
 
 # ==============================
-#  CONFIGURACION DEL SISTEMA
-# ==============================
-if dashboard_option == " Configuracion":
-    from frontend.settings_view import render_settings_view
-    render_settings_view()
-
-# ==============================
 #  DASHBOARD DE PRODUCCION
 # ==============================
-elif dashboard_option == " Dashboard de Produccion":
+if dashboard_option == " Dashboard de Produccion":
     st.header(" Dashboard de Produccion - Ordenes de Fabricacion")
     
     # --- Sidebar: Seleccion de OF ---
@@ -206,7 +294,7 @@ elif dashboard_option == " Dashboard de Produccion":
     # Search button
     if st.sidebar.button(" Buscar OFs", use_container_width=True):
         with st.spinner("Buscando ordenes de fabricacion..."):
-            ofs = search_ofs(str(start_date), str(end_date))
+            ofs = search_ofs(str(start_date), str(end_date), user_email, user_token)
             if ofs:
                 st.session_state["ofs_list"] = ofs
                 st.success(f"Se encontraron {len(ofs)} ordenes de fabricacion")
@@ -232,7 +320,7 @@ elif dashboard_option == " Dashboard de Produccion":
         if st.sidebar.button(" Cargar OF", use_container_width=True):
             with st.spinner("Cargando datos de la OF..."):
                 try:
-                    data = get_of_data(selected_of_id)
+                    data = get_of_data(selected_of_id, user_email, user_token)
                     if data:
                         st.session_state["current_of_data"] = data
                         st.rerun()
@@ -739,11 +827,12 @@ elif dashboard_option == " Dashboard de Produccion":
 #  DASHBOARD DE STOCK
 # ==============================
 elif dashboard_option == " Dashboard de Stock":
-    render_stock_dashboard()
+    render_stock_dashboard(auth_headers)
 
 # ==============================
 #  DASHBOARD DE CONTAINERS
 # ==============================
 elif dashboard_option == " Dashboard de Containers":
-    render_sales_dashboard()
+    render_sales_dashboard(auth_headers)
+
 

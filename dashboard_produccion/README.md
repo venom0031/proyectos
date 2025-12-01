@@ -61,6 +61,7 @@ ODOO_DB=tu-base-de-datos
 ODOO_USER=tu-usuario@email.com
 ODOO_PASSWORD=tu-contrasena
 API_URL=http://127.0.0.1:8000
+SETTINGS_TOKEN=token-admin
 ```
 
 ##  Ejecucion Local (Desarrollo)
@@ -141,6 +142,7 @@ chmod +x start.sh
 
 - El dashboard consume la API desde `dashboard.py` en la raiz (scripts `start.sh` y `start.bat` ya apuntan ahi).
 - Define la variable de entorno `SETTINGS_TOKEN` en el backend y en el entorno del frontend; es requerida para acceder a los endpoints y pantalla de configuracion.
+- Cada usuario debe ingresar su correo y su API Key generada en Odoo (Preferencias -> Claves API). El backend valida esas credenciales directamente contra Odoo.
 - Mantener las credenciales de Odoo solo en variables de entorno o en `config.json` con acceso restringido en el servidor.
 
 ### 4. Configurar como Servicio (Opcional)
