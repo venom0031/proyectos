@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config.settings import settings
-from backend.routers import of_routes, stock_routes, sales_routes
+from backend.routers import of_routes, stock_routes, sales_routes, settings_routes
 
 # Crear aplicación
 app = FastAPI(
@@ -27,6 +27,7 @@ app.add_middleware(
 app.include_router(of_routes.router)
 app.include_router(stock_routes.router)
 app.include_router(sales_routes.router)
+app.include_router(settings_routes.router)
 
 
 @app.get("/")

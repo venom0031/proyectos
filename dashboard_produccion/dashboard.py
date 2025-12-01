@@ -166,16 +166,23 @@ st.sidebar.markdown("---")
 # Selector de dashboard
 dashboard_option = st.sidebar.radio(
     "Seleccionar Dashboard:",
-    ["📊 Dashboard de Producción", "📦 Dashboard de Stock", "🚢 Dashboard de Containers"],
+    ["📊 Dashboard de Producción", "📦 Dashboard de Stock", "🚢 Dashboard de Containers", "⚙️ Configuración"],
     key="dashboard_selector"
 )
 
 st.sidebar.markdown("---")
 
 # ==============================
+#  CONFIGURACIÓN DEL SISTEMA
+# ==============================
+if dashboard_option == "⚙️ Configuración":
+    from frontend.settings_view import render_settings_view
+    render_settings_view()
+
+# ==============================
 #  DASHBOARD DE PRODUCCIÓN
 # ==============================
-if dashboard_option == "📊 Dashboard de Producción":
+elif dashboard_option == "📊 Dashboard de Producción":
     st.header("🏭 Dashboard de Producción - Órdenes de Fabricación")
     
     # --- Sidebar: Selección de OF ---
