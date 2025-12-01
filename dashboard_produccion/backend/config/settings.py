@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     ODOO_DB: str
     ODOO_USER: str
     ODOO_PASSWORD: str
+    SETTINGS_TOKEN: Optional[str] = None
     
     # API Configuration
     API_HOST: str = "0.0.0.0"

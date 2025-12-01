@@ -1,5 +1,5 @@
 """
-Dashboard de Producción Odoo - Interfaz Streamlit
+Dashboard de Produccion Odoo - Interfaz Streamlit
 """
 import streamlit as st
 import pandas as pd
@@ -15,17 +15,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ==============================
-#  CONFIGURACIÓN
+#  CONFIGURACION
 # ==============================
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
 # ==============================
-#  CONFIGURACIÓN UI
+#  CONFIGURACION UI
 # ==============================
 st.set_page_config(
-    page_title="Dashboard Producción Odoo",
+    page_title="Dashboard Produccion Odoo",
     layout="wide",
-    page_icon="📦",
+    page_icon=":bar_chart:",
     initial_sidebar_state="expanded"
 )
 
@@ -111,7 +111,7 @@ st.markdown("""
 # ==============================
 @st.cache_data(ttl=300)
 def search_ofs(start_date: str, end_date: str):
-    """Busca órdenes de fabricación por rango de fechas"""
+    """Busca ordenes de fabricacion por rango de fechas"""
     try:
         response = requests.get(
             f"{API_URL}/of/search",
@@ -121,12 +121,12 @@ def search_ofs(start_date: str, end_date: str):
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        st.error(f"Error al buscar órdenes: {e}")
+        st.error(f"Error al buscar ordenes: {e}")
         return []
 
 @st.cache_data(ttl=300)
 def get_of_data(of_id: int):
-    """Obtiene el detalle completo de una orden de fabricación"""
+    """Obtiene el detalle completo de una orden de fabricacion"""
     try:
         response = requests.get(
             f"{API_URL}/of/{of_id}",
@@ -142,7 +142,7 @@ def get_of_data(of_id: int):
 #  FUNCIONES UI
 # ==============================
 def metric_card(col, label: str, value: str, suffix: str = ""):
-    """Renderiza una tarjeta métrica con estilo personalizado"""
+    """Renderiza una tarjeta metrica con estilo personalizado"""
     with col:
         st.markdown(f"""
             <div class="metric-card">
@@ -158,35 +158,35 @@ def get_name(val):
     return "N/A"
 
 # ==============================
-#  NAVEGACIÓN ENTRE DASHBOARDS
+#  NAVEGACION ENTRE DASHBOARDS
 # ==============================
-st.sidebar.title("🧭 Navegación")
+st.sidebar.title(" Navegacion")
 st.sidebar.markdown("---")
 
 # Selector de dashboard
 dashboard_option = st.sidebar.radio(
     "Seleccionar Dashboard:",
-    ["📊 Dashboard de Producción", "📦 Dashboard de Stock", "🚢 Dashboard de Containers", "⚙️ Configuración"],
+    [" Dashboard de Produccion", " Dashboard de Stock", " Dashboard de Containers", " Configuracion"],
     key="dashboard_selector"
 )
 
 st.sidebar.markdown("---")
 
 # ==============================
-#  CONFIGURACIÓN DEL SISTEMA
+#  CONFIGURACION DEL SISTEMA
 # ==============================
-if dashboard_option == "⚙️ Configuración":
+if dashboard_option == " Configuracion":
     from frontend.settings_view import render_settings_view
     render_settings_view()
 
 # ==============================
-#  DASHBOARD DE PRODUCCIÓN
+#  DASHBOARD DE PRODUCCION
 # ==============================
-elif dashboard_option == "📊 Dashboard de Producción":
-    st.header("🏭 Dashboard de Producción - Órdenes de Fabricación")
+elif dashboard_option == " Dashboard de Produccion":
+    st.header(" Dashboard de Produccion - Ordenes de Fabricacion")
     
-    # --- Sidebar: Selección de OF ---
-    st.sidebar.header("🔍 Buscar Orden de Fabricación")
+    # --- Sidebar: Seleccion de OF ---
+    st.sidebar.header(" Buscar Orden de Fabricacion")
     
     # Date filters
     col1_date, col2_date = st.sidebar.columns(2)
@@ -204,14 +204,14 @@ elif dashboard_option == "📊 Dashboard de Producción":
         )
     
     # Search button
-    if st.sidebar.button("🔍 Buscar OFs", use_container_width=True):
-        with st.spinner("Buscando órdenes de fabricación..."):
+    if st.sidebar.button(" Buscar OFs", use_container_width=True):
+        with st.spinner("Buscando ordenes de fabricacion..."):
             ofs = search_ofs(str(start_date), str(end_date))
             if ofs:
                 st.session_state["ofs_list"] = ofs
-                st.success(f"Se encontraron {len(ofs)} órdenes de fabricación")
+                st.success(f"Se encontraron {len(ofs)} ordenes de fabricacion")
             else:
-                st.warning("No se encontraron órdenes de fabricación en el rango seleccionado")
+                st.warning("No se encontraron ordenes de fabricacion en el rango seleccionado")
                 st.session_state["ofs_list"] = []
     
     # OF Selection
@@ -222,14 +222,14 @@ elif dashboard_option == "📊 Dashboard de Producción":
         }
         
         selected_of = st.sidebar.selectbox(
-            "Seleccionar Orden de Fabricación",
+            "Seleccionar Orden de Fabricacion",
             options=list(ofs_options.keys()),
             key="selected_of"
         )
         
         selected_of_id = ofs_options[selected_of]
         
-        if st.sidebar.button("📥 Cargar OF", use_container_width=True):
+        if st.sidebar.button(" Cargar OF", use_container_width=True):
             with st.spinner("Cargando datos de la OF..."):
                 try:
                     data = get_of_data(selected_of_id)
@@ -242,7 +242,7 @@ elif dashboard_option == "📊 Dashboard de Producción":
                     st.error(f"Error cargando OF: {e}")
     
     # Clear Cache Button
-    if st.sidebar.button("🔄 Recargar / Limpiar Caché", use_container_width=True):
+    if st.sidebar.button(" Recargar / Limpiar Cache", use_container_width=True):
         st.cache_data.clear()
         if "current_of_data" in st.session_state:
             del st.session_state["current_of_data"]
@@ -253,7 +253,7 @@ elif dashboard_option == "📊 Dashboard de Producción":
 # ==============================
 #  DISPLAY DATA
 # ==============================
-if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in st.session_state:
+if dashboard_option == " Dashboard de Produccion" and "current_of_data" in st.session_state:
     data = st.session_state["current_of_data"]
     of = data.get("of", {})
     componentes = data.get("componentes", [])
@@ -263,11 +263,11 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
     kpis = data.get("kpis", {})
     
     # ==============================
-    # TARJETAS KPI - Información General
+    # TARJETAS KPI - Informacion General
     # ==============================
-    st.subheader("🔹 Información General")
+    st.subheader(" Informacion General")
     
-    # Fila 1: Datos Básicos
+    # Fila 1: Datos Basicos
     col1, col2, col3, col4 = st.columns(4)
     
     responsable = of.get("user_id", {})
@@ -306,8 +306,8 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
     po_asoc_name = po_asoc.get("name", "N/A") if isinstance(po_asoc, dict) else "N/A"
     kg_totales_po = of.get("x_studio_kg_totales_po", 0) or 0
     
-    metric_card(po_cols[0], "¿Para PO?", "Sí" if es_para_po else "No")
-    metric_card(po_cols[1], "Número PO", num_po)
+    metric_card(po_cols[0], "Para PO?", "Si" if es_para_po else "No")
+    metric_card(po_cols[1], "Numero PO", num_po)
     metric_card(po_cols[2], "PO Asociada", po_asoc_name)
     metric_card(po_cols[3], "KG Totales PO", f"{kg_totales_po:,.2f}", " kg")
     
@@ -318,7 +318,7 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
     
     metric_card(po_cols2[0], "KG Consumidos PO", f"{kg_consumidos_po:,.2f}", " kg")
     metric_card(po_cols2[1], "KG Disponibles PO", f"{kg_disponibles_po:,.2f}", " kg")
-    metric_card(po_cols2[2], "Dotación", str(of.get("x_studio_dotacin", "N/A")))
+    metric_card(po_cols2[2], "Dotacion", str(of.get("x_studio_dotacin", "N/A")))
     
     sala = of.get("x_studio_sala_de_proceso", {})
     sala_name = sala.get("name", "N/A") if isinstance(sala, dict) else "N/A"
@@ -326,12 +326,12 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
     
     st.markdown("---")
     
-    # KPIs de Producción
-    st.subheader("📊 KPIs de Producción")
+    # KPIs de Produccion
+    st.subheader(" KPIs de Produccion")
     
     col1, col2, col3, col4 = st.columns(4)
     
-    metric_card(col1, "Producción Total", f"{kpis.get('produccion_total_kg', 0):,.2f}", " kg")
+    metric_card(col1, "Produccion Total", f"{kpis.get('produccion_total_kg', 0):,.2f}", " kg")
     metric_card(col2, "Rendimiento Real", f"{kpis.get('rendimiento_real_%', 0):.2f}", "%")
     metric_card(col3, "KG/HH Efectiva", f"{kpis.get('kg_por_hh_efectiva', 0):.2f}")
     metric_card(col4, "Consumo MP", f"{kpis.get('consumo_real_mp_kg', 0):,.2f}", " kg")
@@ -339,7 +339,7 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
     # ==============================
     # GRAFICO RENDIMIENTO
     # ==============================
-    st.subheader("📈 Rendimiento del Proceso")
+    st.subheader(" Rendimiento del Proceso")
     
     rendimiento = kpis.get("rendimiento_real_%", 0)
     
@@ -378,21 +378,21 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
     # ==============================
     # TABLAS DE DATOS
     # ==============================
-    st.subheader("📋 Detalle de Componentes y Subproductos")
+    st.subheader(" Detalle de Componentes y Subproductos")
     
     tab1, tab2, tab3, tab4 = st.tabs([
-        "📦 Componentes (MP)",
-        "📦 Subproductos",
-        "🛑 Detenciones",
-        "🕒 Horas de Consumo"
+        " Componentes (MP)",
+        " Subproductos",
+        " Detenciones",
+        " Horas de Consumo"
     ])
     
     with tab1:
         if componentes:
-            # Filtro por categoría (multiselect)
+            # Filtro por categoria (multiselect)
             categorias_comp = sorted(list(set([c.get("product_category_name", "N/A") for c in componentes])))
             categorias_seleccionadas = st.multiselect(
-                "Filtrar por Categorías",
+                "Filtrar por Categorias",
                 categorias_comp,
                 default=categorias_comp,  # Por defecto todas seleccionadas
                 key="cat_comp"
@@ -410,14 +410,14 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
                     "Producto": get_name(c.get("product_id")),
                     "Lote": get_name(c.get("lot_id")),
                     "Cantidad (kg)": c.get("qty_done", 0) or 0,
-                    "Ubicación Origen": get_name(c.get("location_id")),
+                    "Ubicacion Origen": get_name(c.get("location_id")),
                     "Pallet Origen": get_name(c.get("package_id")),
-                    "Categoría": c.get("product_category_name", "N/A")
+                    "Categoria": c.get("product_category_name", "N/A")
                 } for c in componentes_filtrados])
                 st.dataframe(df_comp, use_container_width=True, height=400)
                 
-                # Gráfico de distribución por producto (dinámico según filtro)
-                st.markdown("### 📊 Distribución por Producto")
+                # Grafico de distribucion por producto (dinamico segun filtro)
+                st.markdown("###  Distribucion por Producto")
                 producto_dist = {}
                 for c in componentes_filtrados:
                     prod_name = get_name(c.get("product_id"))
@@ -474,8 +474,8 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
                 
                 st.plotly_chart(fig_comp, use_container_width=True)
                 
-                # Gráfico de distribución por categoría (dinámico según filtro)
-                st.markdown("### 📦 Distribución por Categoría")
+                # Grafico de distribucion por categoria (dinamico segun filtro)
+                st.markdown("###  Distribucion por Categoria")
                 cat_dist = {}
                 for c in componentes_filtrados:
                     cat_name = c.get("product_category_name", "N/A")
@@ -525,16 +525,16 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
                 
                 st.plotly_chart(fig_cat, use_container_width=True)
             else:
-                st.info("No hay componentes para las categorías seleccionadas")
+                st.info("No hay componentes para las categorias seleccionadas")
         else:
             st.info("No hay componentes registrados")
     
     with tab2:
         if subproductos:
-            # Filtro por categoría (multiselect)
+            # Filtro por categoria (multiselect)
             categorias_sub = sorted(list(set([s.get("product_category_name", "N/A") for s in subproductos])))
             categorias_seleccionadas_sub = st.multiselect(
-                "Filtrar por Categorías",
+                "Filtrar por Categorias",
                 categorias_sub,
                 default=categorias_sub,  # Por defecto todas seleccionadas
                 key="cat_sub"
@@ -552,14 +552,14 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
                     "Producto": get_name(s.get("product_id")),
                     "Lote": get_name(s.get("lot_id")),
                     "Cantidad (kg)": s.get("qty_done", 0) or 0,
-                    "Ubicación Destino": get_name(s.get("location_dest_id")),
+                    "Ubicacion Destino": get_name(s.get("location_dest_id")),
                     "Pallet Destino": get_name(s.get("result_package_id")),
-                    "Categoría": s.get("product_category_name", "N/A")
+                    "Categoria": s.get("product_category_name", "N/A")
                 } for s in subproductos_filtrados])
                 st.dataframe(df_sub, use_container_width=True, height=400)
                 
-                # Gráfico de distribución por producto (dinámico según filtro)
-                st.markdown("### 📊 Distribución por Producto")
+                # Grafico de distribucion por producto (dinamico segun filtro)
+                st.markdown("###  Distribucion por Producto")
                 producto_dist_sub = {}
                 for s in subproductos_filtrados:
                     prod_name = get_name(s.get("product_id"))
@@ -616,8 +616,8 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
                 
                 st.plotly_chart(fig_sub, use_container_width=True)
                 
-                # Gráfico de distribución por categoría (dinámico según filtro)
-                st.markdown("### 📦 Distribución por Categoría")
+                # Grafico de distribucion por categoria (dinamico segun filtro)
+                st.markdown("###  Distribucion por Categoria")
                 cat_dist_sub = {}
                 for s in subproductos_filtrados:
                     cat_name = s.get("product_category_name", "N/A")
@@ -667,7 +667,7 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
                 
                 st.plotly_chart(fig_cat_sub, use_container_width=True)
             else:
-                st.info("No hay subproductos para las categorías seleccionadas")
+                st.info("No hay subproductos para las categorias seleccionadas")
         else:
             st.info("No hay subproductos registrados")
     
@@ -678,7 +678,7 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
                 "Motivo": get_name(d.get("x_motivodetencion")),
                 "Hora Inicio": d.get("x_horainiciodetencion", "N/A"),
                 "Hora Fin": d.get("x_horafindetencion", "N/A"),
-                "Horas Detención": d.get("x_studio_horas_de_detencin", 0) or 0
+                "Horas Detencion": d.get("x_studio_horas_de_detencin", 0) or 0
             } for d in detenciones])
             st.dataframe(df_det, use_container_width=True, height=400)
         else:
@@ -714,36 +714,36 @@ if dashboard_option == "📊 Dashboard de Producción" and "current_of_data" in 
         else:
             st.info("No hay horas de consumo registradas")
 
-elif dashboard_option == "📊 Dashboard de Producción":
-    st.info("👈 Selecciona un rango de fechas y busca órdenes de fabricación en el panel lateral")
+elif dashboard_option == " Dashboard de Produccion":
+    st.info(" Selecciona un rango de fechas y busca ordenes de fabricacion en el panel lateral")
     st.markdown("""
-    ### 📊 Bienvenido al Dashboard de Producción
+    ###  Bienvenido al Dashboard de Produccion
     
-    Este dashboard te permite visualizar y analizar datos de órdenes de fabricación de Odoo.
+    Este dashboard te permite visualizar y analizar datos de ordenes de fabricacion de Odoo.
     
-    **Características:**
-    - 🔍 Búsqueda de OFs por rango de fechas
-    - 📈 KPIs de producción y rendimiento
-    - 📦 Detalle de componentes y subproductos
-    - 🛑 Registro de detenciones
-    - 🕒 Control de horas de consumo
+    **Caracteristicas:**
+    -  Busqueda de OFs por rango de fechas
+    -  KPIs de produccion y rendimiento
+    -  Detalle de componentes y subproductos
+    -  Registro de detenciones
+    -  Control de horas de consumo
     
     **Para comenzar:**
     1. Selecciona un rango de fechas en el panel lateral
     2. Haz clic en "Buscar OFs"
-    3. Selecciona una orden de fabricación
+    3. Selecciona una orden de fabricacion
     4. Haz clic en "Cargar OF"
     """)
 
 # ==============================
 #  DASHBOARD DE STOCK
 # ==============================
-elif dashboard_option == "📦 Dashboard de Stock":
+elif dashboard_option == " Dashboard de Stock":
     render_stock_dashboard()
 
 # ==============================
 #  DASHBOARD DE CONTAINERS
 # ==============================
-elif dashboard_option == "🚢 Dashboard de Containers":
+elif dashboard_option == " Dashboard de Containers":
     render_sales_dashboard()
 

@@ -7,6 +7,7 @@ import requests
 import os
 
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
+SETTINGS_TOKEN = os.getenv("SETTINGS_TOKEN")
 
 # ==============================
 #  ESTILOS CSS
@@ -73,10 +74,19 @@ SETTINGS_CSS = """
 """
 
 
+def _auth_headers():
+    """Headers para proteger llamadas de configuraci�n."""
+    return {"X-Settings-Token": SETTINGS_TOKEN} if SETTINGS_TOKEN else {}
+
+
 def get_connection_status():
     """Obtiene el estado de conexión actual"""
     try:
-        response = requests.get(f"{API_URL}/settings/status", timeout=5)
+        response = requests.get(
+            f"{API_URL}/settings/status",
+            timeout=5,
+            headers=_auth_headers()
+        )
         if response.status_code == 200:
             return response.json()
     except:
@@ -87,7 +97,11 @@ def get_connection_status():
 def get_current_config():
     """Obtiene la configuración actual"""
     try:
-        response = requests.get(f"{API_URL}/settings/odoo", timeout=5)
+        response = requests.get(
+            f"{API_URL}/settings/odoo",
+            timeout=5,
+            headers=_auth_headers()
+        )
         if response.status_code == 200:
             return response.json()
     except:
@@ -106,7 +120,8 @@ def test_connection(url, db, user, password):
                 "odoo_user": user,
                 "odoo_password": password
             },
-            timeout=30
+            timeout=30,
+            headers=_auth_headers()
         )
         if response.status_code == 200:
             return response.json()
@@ -126,7 +141,8 @@ def save_config(url, db, user, password):
                 "odoo_user": user,
                 "odoo_password": password
             },
-            timeout=10
+            timeout=10,
+            headers=_auth_headers()
         )
         if response.status_code == 200:
             return response.json()
@@ -148,6 +164,10 @@ def render_settings_view():
         <p style="color: #888; margin-top: 10px;">Configura la conexión a Odoo</p>
     </div>
     """, unsafe_allow_html=True)
+
+    if not SETTINGS_TOKEN:
+        st.warning("Configura la variable SETTINGS_TOKEN en el servidor para usar esta vista.")
+        return
     
     # Estado de conexión actual
     status = get_connection_status()

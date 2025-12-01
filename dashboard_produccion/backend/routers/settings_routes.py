@@ -1,12 +1,13 @@
 """
 Rutas para configuración del sistema
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header, Depends, status
 from pydantic import BaseModel
 from typing import Optional
 import os
 import json
 from pathlib import Path
+from backend.config.settings import settings
 
 router = APIRouter(
     prefix="/settings",
@@ -16,6 +17,22 @@ router = APIRouter(
 
 # Archivo de configuración
 CONFIG_FILE = Path(__file__).parent.parent.parent / "config.json"
+
+
+def verify_settings_token(x_settings_token: Optional[str] = Header(None)):
+    """Valida el token requerido para administrar la configuraci�n."""
+    required_token = settings.SETTINGS_TOKEN
+    if not required_token:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Settings token not configured on server"
+        )
+    if not x_settings_token or x_settings_token != required_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing settings token"
+        )
+    return True
 
 
 class OdooConfig(BaseModel):
@@ -70,13 +87,13 @@ def save_config(config: dict) -> bool:
         return False
 
 
-@router.get("/odoo")
+@router.get("/odoo", dependencies=[Depends(verify_settings_token)])
 async def get_odoo_config():
     """Obtiene la configuración actual de Odoo (sin password)"""
     return load_config()
 
 
-@router.post("/odoo")
+@router.post("/odoo", dependencies=[Depends(verify_settings_token)])
 async def save_odoo_config(config: OdooConfig):
     """Guarda la configuración de Odoo"""
     config_dict = {
@@ -109,7 +126,7 @@ async def save_odoo_config(config: OdooConfig):
         raise HTTPException(status_code=500, detail="Error al guardar configuración")
 
 
-@router.post("/test-connection")
+@router.post("/test-connection", dependencies=[Depends(verify_settings_token)])
 async def test_odoo_connection(request: TestConnectionRequest):
     """Prueba la conexión a Odoo con las credenciales proporcionadas"""
     import xmlrpc.client
@@ -155,7 +172,7 @@ async def test_odoo_connection(request: TestConnectionRequest):
         }
 
 
-@router.get("/status")
+@router.get("/status", dependencies=[Depends(verify_settings_token)])
 async def get_connection_status():
     """Obtiene el estado actual de la conexión"""
     try:

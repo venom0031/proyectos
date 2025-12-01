@@ -1,22 +1,22 @@
-# Dashboard de Producción Odoo
+# Dashboard de Produccion Odoo
 
-Dashboard modular para visualización y análisis de órdenes de fabricación de Odoo con backend FastAPI y frontend Streamlit.
+Dashboard modular para visualizacion y analisis de ordenes de fabricacion de Odoo con backend FastAPI y frontend Streamlit.
 
-## 🌟 Características
+##  Caracteristicas
 
-- 🔍 **Búsqueda de OFs**: Búsqueda por rango de fechas
-- 📈 **KPIs de Producción**: Rendimiento, eficiencia, consumo de MP
-- 📦 **Detalle Completo**: Componentes, subproductos, detenciones y horas de consumo
-- 🎨 **Interfaz Premium**: Dashboard con diseño moderno y dark mode
-- 🔧 **Arquitectura Modular**: Código organizado y escalable para nuevos dashboards
+-  **Busqueda de OFs**: Busqueda por rango de fechas
+-  **KPIs de Produccion**: Rendimiento, eficiencia, consumo de MP
+-  **Detalle Completo**: Componentes, subproductos, detenciones y horas de consumo
+-  **Interfaz Premium**: Dashboard con diseno moderno y dark mode
+-  **Arquitectura Modular**: Codigo organizado y escalable para nuevos dashboards
 
-## 📋 Requisitos
+##  Requisitos
 
 - Python 3.8+
 - Acceso a una instancia de Odoo (16+)
 - Credenciales de usuario de Odoo
 
-## 🚀 Instalación
+##  Instalacion
 
 ### 1. Clonar o Descargar el Proyecto
 
@@ -59,13 +59,13 @@ Edita el archivo `.env` con tus datos:
 ODOO_URL=https://tu-instancia.odoo.com
 ODOO_DB=tu-base-de-datos
 ODOO_USER=tu-usuario@email.com
-ODOO_PASSWORD=tu-contraseña
+ODOO_PASSWORD=tu-contrasena
 API_URL=http://127.0.0.1:8000
 ```
 
-## 💻 Ejecución Local (Desarrollo)
+##  Ejecucion Local (Desarrollo)
 
-### Opción 1: Scripts de Inicio Automáticos
+### Opcion 1: Scripts de Inicio Automaticos
 
 **Windows:**
 ```bash
@@ -78,7 +78,7 @@ chmod +x start.sh
 ./start.sh
 ```
 
-### Opción 2: Iniciar Servicios Manualmente
+### Opcion 2: Iniciar Servicios Manualmente
 
 #### Backend (Terminal 1)
 ```bash
@@ -93,10 +93,10 @@ streamlit run dashboard.py
 ### Acceso
 
 - **API Backend**: http://localhost:8000
-- **Documentación API**: http://localhost:8000/docs
+- **Documentacion API**: http://localhost:8000/docs
 - **Dashboard**: http://localhost:8501
 
-## 🌐 Deployment a VPS (Producción)
+##  Deployment a VPS (Produccion)
 
 ### 1. Preparar el Servidor
 
@@ -130,16 +130,22 @@ nano .env  # Editar con tus credenciales
 ### 3. Iniciar Servicios
 
 ```bash
-# Dar permisos de ejecución al script
+# Dar permisos de ejecucion al script
 chmod +x start.sh
 
 # Iniciar servicios
 ./start.sh
 ```
 
+### 3.1 Notas de seguridad y configuracion
+
+- El dashboard consume la API desde `dashboard.py` en la raiz (scripts `start.sh` y `start.bat` ya apuntan ahi).
+- Define la variable de entorno `SETTINGS_TOKEN` en el backend y en el entorno del frontend; es requerida para acceder a los endpoints y pantalla de configuracion.
+- Mantener las credenciales de Odoo solo en variables de entorno o en `config.json` con acceso restringido en el servidor.
+
 ### 4. Configurar como Servicio (Opcional)
 
-Para que los servicios se inicien automáticamente:
+Para que los servicios se inicien automaticamente:
 
 **Backend (API):**
 ```bash
@@ -194,7 +200,7 @@ sudo systemctl start odoo-api odoo-dashboard
 
 ### 5. Configurar Nginx (Opcional)
 
-Para servir a través de un dominio:
+Para servir a traves de un dominio:
 
 ```bash
 sudo apt install nginx -y
@@ -230,43 +236,43 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-## 📁 Estructura del Proyecto
+##  Estructura del Proyecto
 
 ```
 DASHNBOARDS/
-├── backend/
-│   ├── config/
-│   │   └── settings.py         # Configuración centralizada
-│   ├── core/
-│   │   └── odoo_connection.py  # Conexión a Odoo
-│   ├── routers/
-│   │   └── of_routes.py        # Endpoints de API
-│   ├── services/
-│   │   └── of_service.py       # Lógica de negocio
-│   ├── utils/
-│   │   └── helpers.py          # Funciones auxiliares
-│   └── main.py                 # Aplicación FastAPI
-├── frontend/
-│   ├── components/
-│   │   ├── kpi_cards.py        # Componentes de KPIs
-│   │   ├── charts.py           # Gráficos
-│   │   └── tables.py           # Tablas
-│   ├── services/
-│   │   └── api_client.py       # Cliente API
-│   ├── config/
-│   │   └── settings.py         # Configuración UI
-│   └── dashboard.py            # Dashboard modular
-├── dashboard.py                # Punto de entrada principal
-├── requirements.txt            # Dependencias
-├── .env.example                # Template de configuración
-├── start.sh                    # Script de inicio (Linux)
-├── start.bat                   # Script de inicio (Windows)
-└── README.md                   # Este archivo
+ backend/
+    config/
+       settings.py         # Configuracion centralizada
+    core/
+       odoo_connection.py  # Conexion a Odoo
+    routers/
+       of_routes.py        # Endpoints de API
+    services/
+       of_service.py       # Logica de negocio
+    utils/
+       helpers.py          # Funciones auxiliares
+    main.py                 # Aplicacion FastAPI
+ frontend/
+    components/
+       kpi_cards.py        # Componentes de KPIs
+       charts.py           # Graficos
+       tables.py           # Tablas
+    services/
+       api_client.py       # Cliente API
+    config/
+       settings.py         # Configuracion UI
+    dashboard.py            # Dashboard modular
+ dashboard.py                # Punto de entrada principal
+ requirements.txt            # Dependencias
+ .env.example                # Template de configuracion
+ start.sh                    # Script de inicio (Linux)
+ start.bat                   # Script de inicio (Windows)
+ README.md                   # Este archivo
 ```
 
-## 🔧 Añadir Nuevos Dashboards
+##  Anadir Nuevos Dashboards
 
-La estructura modular permite añadir fácilmente nuevos dashboards. Ejemplo para un dashboard de stock:
+La estructura modular permite anadir facilmente nuevos dashboards. Ejemplo para un dashboard de stock:
 
 ### 1. Crear Router en el Backend
 
@@ -278,7 +284,7 @@ router = APIRouter(prefix="/stock", tags=["Stock"])
 
 @router.get("/ubicaciones")
 def get_ubicaciones():
-    # Tu lógica aquí
+    # Tu logica aqui
     pass
 ```
 
@@ -298,29 +304,29 @@ app.include_router(stock_routes.router)
 import streamlit as st
 from frontend.services.api_client import api_client
 
-st.title("📦 Dashboard de Stock")
-# Tu UI aquí
+st.title(" Dashboard de Stock")
+# Tu UI aqui
 ```
 
 ### 4. Crear Punto de Entrada
 
 ```python
-# stock.py (en la raíz)
+# stock.py (en la raiz)
 from frontend.stock_dashboard import *
 ```
 
 Ejecutar: `streamlit run stock.py`
 
-## 🔍 API Documentation
+##  API Documentation
 
-Una vez iniciado el backend, puedes acceder a la documentación interactiva de la API en:
+Una vez iniciado el backend, puedes acceder a la documentacion interactiva de la API en:
 
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
-### Error de Conexión a Odoo
+### Error de Conexion a Odoo
 
 Verifica que:
 - Las credenciales en `.env` sean correctas
@@ -332,7 +338,7 @@ Verifica que:
 Si ves errores de puerto en uso:
 
 ```bash
-# Para ver qué proceso usa el puerto 8000
+# Para ver que proceso usa el puerto 8000
 netstat -ano | findstr :8000  # Windows
 lsof -i :8000                 # Linux/Mac
 
@@ -341,14 +347,14 @@ taskkill /PID <PID> /F        # Windows
 kill -9 <PID>                 # Linux/Mac
 ```
 
-### Limpiar Caché
+### Limpiar Cache
 
-Si ves datos antiguos, limpia el caché desde el botón "🔄 Recargar / Limpiar Caché" en el sidebar.
+Si ves datos antiguos, limpia el cache desde el boton " Recargar / Limpiar Cache" en el sidebar.
 
-## 📝 Licencia
+##  Licencia
 
 Este proyecto es de uso interno. Todos los derechos reservados.
 
-## 👥 Soporte
+##  Soporte
 
 Para soporte o preguntas, contacta al equipo de desarrollo.

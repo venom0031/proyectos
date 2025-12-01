@@ -11,47 +11,69 @@ class StockService:
 
     def get_chambers_stock(self) -> List[Dict]:
         """
-        Obtiene el stock de las cámaras agrupado por Especie y Condición.
-        Incluye información de la ubicación padre (Zona).
-        Incluye capacidad en pallets y posiciones ocupadas.
-        Usa read_group para optimizar rendimiento.
+        Obtiene stock agrupado por camara (ubicacion) y especie/condicion.
+        Usa search_read limitado para mantener rendimiento y garantizar datos.
         """
         uid, models = odoo.connect()
 
-        # 1. Primero obtener ubicaciones que tienen stock
+        domain = [
+            ("quantity", ">", 0),
+            ("location_id.usage", "=", "internal"),
+            ("location_id.active", "=", True)
+        ]
+        fields = ["location_id", "product_id", "quantity", "package_id"]
+
         try:
-            # Buscar quants con stock > 0
-            quants_with_stock = odoo.execute_kw(
-                "stock.quant", "search_read",
-                [[("quantity", ">", 0)]],
-                {"fields": ["location_id", "package_id"], "limit": 100000}
+            quants = odoo.execute_kw(
+                "stock.quant",
+                "search_read",
+                [domain],
+                {"fields": fields, "limit": 50000}
             )
-            
-            # Extraer IDs únicos de ubicaciones con stock
-            loc_ids_with_stock = list(set([q["location_id"][0] for q in quants_with_stock if q.get("location_id")]))
-            
-            if not loc_ids_with_stock:
-                print("No locations with stock found")
-                return []
-            
-            # Contar pallets por ubicación
-            pallets_per_location = {}
-            for q in quants_with_stock:
-                if q.get("location_id") and q.get("package_id"):
-                    loc_id = q["location_id"][0]
-                    pkg_id = q["package_id"][0]
-                    if loc_id not in pallets_per_location:
-                        pallets_per_location[loc_id] = set()
-                    pallets_per_location[loc_id].add(pkg_id)
-            
-            # Ahora obtener solo esas ubicaciones internas
-            domain_loc = [("id", "in", loc_ids_with_stock), ("usage", "=", "internal")]
-            # Campos básicos (sin campos Studio que pueden no existir)
-            fields_loc = ["name", "display_name", "location_id"]
-            
-            loc_ids = odoo.execute_kw("stock.location", "search", [domain_loc])
-            locations = odoo.execute_kw("stock.location", "read", [loc_ids], {"fields": fields_loc})
-            
+        except Exception as e:
+            print(f"Error fetching quants: {e}")
+            return []
+
+        if not quants:
+            return []
+
+        loc_ids = sorted({
+            q["location_id"][0]
+            for q in quants
+            if q.get("location_id")
+        })
+        if not loc_ids:
+            return []
+
+        pallets_per_location: Dict[int, set] = {}
+        for q in quants:
+            loc = q.get("location_id")
+            pkg = q.get("package_id")
+            if loc and pkg:
+                pallets_per_location.setdefault(loc[0], set()).add(pkg[0])
+
+        fields_loc = [
+            "name",
+            "display_name",
+            "location_id",
+            "usage",
+            "active",
+            "x_capacity_pallets",
+            "pallet_capacity",
+        ]
+
+        try:
+            loc_ids_filtered = odoo.execute_kw(
+                "stock.location",
+                "search",
+                [[("id", "in", loc_ids), ("usage", "=", "internal"), ("active", "=", True)]]
+            )
+            locations = odoo.execute_kw(
+                "stock.location",
+                "read",
+                [loc_ids_filtered],
+                {"fields": fields_loc}
+            ) if loc_ids_filtered else []
         except Exception as e:
             print(f"Error fetching locations: {e}")
             return []
@@ -60,16 +82,18 @@ class StockService:
         for loc in locations:
             clean_loc = clean_record(loc)
             loc_id = clean_loc["id"]
-            
             parent = loc.get("location_id")
             parent_name = parent[1] if parent else "Sin Padre"
-            
-            # Pallets ocupados (conteo real desde quants)
             occupied = len(pallets_per_location.get(loc_id, set()))
-            # Capacidad estimada (pallets ocupados * 1.2 como placeholder, o un valor fijo)
-            # Si tienes un campo de capacidad real, podemos agregarlo después
-            capacity = max(occupied, 50)  # Mínimo 50 o lo que tenga ocupado
-            
+
+            capacity_candidates = [
+                loc.get("x_capacity_pallets"),
+                loc.get("pallet_capacity"),
+            ]
+            capacity = next((c for c in capacity_candidates if isinstance(c, (int, float)) and c > 0), None)
+            if capacity is None:
+                capacity = max(occupied, 50)
+
             chambers[loc_id] = {
                 "id": loc_id,
                 "name": clean_loc["name"],
@@ -77,85 +101,53 @@ class StockService:
                 "parent_name": parent_name,
                 "capacity_pallets": capacity,
                 "occupied_pallets": occupied,
-                "stock_data": {} 
+                "stock_data": {}
             }
 
-        # 2. Obtener Stock Agrupado (read_group)
-        domain_quant = [
-            ("location_id", "in", list(chambers.keys())),
-            ("quantity", ">", 0)
-        ]
-        
-        try:
-            # Agrupamos por location_id y product_id
-            grouped_data = odoo.execute_kw(
-                "stock.quant", "read_group",
-                [domain_quant, ["location_id", "product_id", "quantity"], ["location_id", "product_id"]],
-                {"lazy": False}
-            )
-        except Exception as e:
-            print(f"Error fetching grouped stock: {e}")
-            return []
-
-        # 3. Obtener Info de Productos (Categorías)
-        product_ids = set()
-        for g in grouped_data:
-            if g.get("product_id"):
-                product_ids.add(g["product_id"][0])
-        
+        product_ids = {
+            q["product_id"][0]
+            for q in quants
+            if q.get("product_id")
+        }
         products_info = {}
         if product_ids:
             try:
-                p_fields = ["categ_id", "name"]
-                p_data = odoo.execute_kw("product.product", "read", [list(product_ids)], {"fields": p_fields})
+                p_data = odoo.execute_kw(
+                    "product.product",
+                    "read",
+                    [list(product_ids)],
+                    {"fields": ["categ_id", "name"]}
+                )
                 for p in p_data:
                     products_info[p["id"]] = {
-                        "category": p["categ_id"][1] if p["categ_id"] else "Sin Categoría",
-                        "name": p["name"]
+                        "category": p["categ_id"][1] if p.get("categ_id") else "Sin Categoria",
+                        "name": p.get("name", "")
                     }
             except Exception as e:
                 print(f"Error fetching products: {e}")
 
-        # 4. Procesar Datos Agrupados
-        for g in grouped_data:
-            loc_data = g.get("location_id")
-            prod_data = g.get("product_id")
-            qty = g.get("quantity", 0)
-            
-            if not loc_data or not prod_data:
+        for q in quants:
+            loc = q.get("location_id")
+            prod = q.get("product_id")
+            if not loc or not prod:
                 continue
-                
-            loc_id = loc_data[0]
-            prod_id = prod_data[0]
-            
+            loc_id = loc[0]
             if loc_id not in chambers:
                 continue
-                
-            if prod_id not in products_info:
+
+            qty = q.get("quantity", 0) or 0
+            p_info = products_info.get(prod[0])
+            if p_info:
+                species = p_info["category"]
+                condition = "Organico" if "org" in p_info["name"].lower() else "Convencional"
+            else:
                 species = "Desconocido"
                 condition = "N/A"
-            else:
-                p_info = products_info[prod_id]
-                species = p_info["category"]
-                prod_name_lower = p_info["name"].lower()
-                if "org" in prod_name_lower:
-                    condition = "Orgánico"
-                else:
-                    condition = "Convencional"
 
             key = f"{species} - {condition}"
-            
-            if key not in chambers[loc_id]["stock_data"]:
-                chambers[loc_id]["stock_data"][key] = 0
-            
-            chambers[loc_id]["stock_data"][key] += qty
+            chambers[loc_id]["stock_data"][key] = chambers[loc_id]["stock_data"].get(key, 0) + qty
 
-        # Formatear salida
-        result = []
-        for cid, data in chambers.items():
-            if data["stock_data"]:
-                result.append(data)
-                
+        result = [data for data in chambers.values() if data["stock_data"]]
         return result
 
     def get_pallets(self, location_id: int, category: Optional[str] = None) -> List[Dict]:
@@ -176,8 +168,13 @@ class StockService:
         ]
         
         try:
-            quant_ids = odoo.execute_kw("stock.quant", "search", [domain])
-            quants = odoo.execute_kw("stock.quant", "read", [quant_ids], {"fields": fields})
+            quant_ids = odoo.execute_kw(
+                "stock.quant",
+                "search",
+                [domain],
+                {"limit": 5000, "order": "in_date desc"}
+            )
+            quants = odoo.execute_kw("stock.quant", "read", [quant_ids], {"fields": fields}) if quant_ids else []
         except Exception as e:
             print(f"Error fetching pallets: {e}")
             return []
@@ -255,7 +252,8 @@ class StockService:
         # Dominio base
         domain = [
             ("quantity", ">", 0),
-            ("lot_id", "!=", False)
+            ("lot_id", "!=", False),
+            ("location_id.usage", "=", "internal")
         ]
         
         if location_ids:
@@ -267,8 +265,13 @@ class StockService:
         ]
         
         try:
-            quant_ids = odoo.execute_kw("stock.quant", "search", [domain], {"limit": 50000})
-            quants = odoo.execute_kw("stock.quant", "read", [quant_ids], {"fields": fields})
+            quant_ids = odoo.execute_kw(
+                "stock.quant",
+                "search",
+                [domain],
+                {"limit": 20000, "order": "in_date desc"}
+            )
+            quants = odoo.execute_kw("stock.quant", "read", [quant_ids], {"fields": fields}) if quant_ids else []
         except Exception as e:
             print(f"Error fetching lots: {e}")
             return []

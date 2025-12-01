@@ -23,6 +23,10 @@ class SalesService:
         
         # PASO 1: Buscar TODAS las fabricaciones que tienen una PO asociada
         prod_domain = [("x_studio_po_asociada_1", "!=", False)]
+        if start_date:
+            prod_domain.append(("date_planned_start", ">=", start_date))
+        if end_date:
+            prod_domain.append(("date_planned_start", "<=", end_date))
         
         prod_fields = [
             "name", "product_id", "product_qty", "qty_produced",
@@ -34,7 +38,12 @@ class SalesService:
         
         try:
             print("Buscando fabricaciones con PO asociada...")
-            prod_ids = odoo.execute_kw("mrp.production", "search", [prod_domain], {"limit": 500})
+            prod_ids = odoo.execute_kw(
+                "mrp.production",
+                "search",
+                [prod_domain],
+                {"limit": 1000, "order": "date_planned_start desc"}
+            )
             
             if not prod_ids:
                 print("No hay fabricaciones con PO asociada")
