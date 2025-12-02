@@ -1,0 +1,26 @@
+# Environments
+.env
+.env.*
+venv/
+.venv/
+
+# Python caches
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Editors/OS
+.vscode/
+.idea/
+*.log
+.DS_Store
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Build/output
+dist/
+build/
+*.sqlite3
