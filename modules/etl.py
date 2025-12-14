@@ -345,11 +345,11 @@ def load_week_from_db(user_id: int, is_admin: bool = False, semana: int = None, 
             est.nombre as "Establecimiento",
             ds.semana as "N° Semana",
             -- Transformar datos de columnas a filas (unpivot)
-            'Superficie Praderas' as "CONCEPTO", ds.superficie_pradera as "A. TOTAL"
+            'Superficie Praderas' as "CONCEPTO", est.superficie_praderas as "A. TOTAL"
         FROM datos_semanales ds
         JOIN establecimientos est ON ds.establecimiento_id = est.id
         JOIN empresas emp ON ds.empresa_id = emp.id
-        WHERE ds.semana = %s AND ds.anio = %s AND ds.superficie_pradera IS NOT NULL
+        WHERE ds.semana = %s AND ds.anio = %s AND est.superficie_praderas IS NOT NULL
         
         UNION ALL
         

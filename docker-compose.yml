@@ -10,12 +10,12 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-admin}
       POSTGRES_DB: ${DB_NAME:-integra_rls}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,7 +42,7 @@ services:
       STREAMLIT_SERVER_PORT: 8501
       STREAMLIT_SERVER_HEADLESS: "true"
     ports:
-      - "8501:8501"
+      - "8503:8501"
     volumes:
       - ./modules:/app/modules
       - ./data:/app/data
@@ -79,7 +79,7 @@ services:
     networks:
       - integra_network
     restart: unless-stopped
-    command: ["streamlit", "run", "admin_panel.py", "--server.port=8502", "--server.address=0.0.0.0"]
+    command: [ "streamlit", "run", "admin_panel.py", "--server.port=8502", "--server.address=0.0.0.0" ]
 
 volumes:
   postgres_data:
