@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: integra_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin}
+      POSTGRES_DB: ${DB_NAME:-integra_rls}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - integra_network
+
+  # Streamlit Web Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: integra_app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-integra_rls}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-admin}
+      WKHTMLTOPDF_PATH: /usr/bin/wkhtmltopdf
+      PDF_FALLBACK_TO_HTML: "true"
+      STREAMLIT_SERVER_PORT: 8501
+      STREAMLIT_SERVER_HEADLESS: "true"
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./modules:/app/modules
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - integra_network
+    restart: unless-stopped
+
+  # (Opcional) Admin Panel en puerto diferente
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: integra_admin
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-integra_rls}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-admin}
+      WKHTMLTOPDF_PATH: /usr/bin/wkhtmltopdf
+      PDF_FALLBACK_TO_HTML: "true"
+      STREAMLIT_SERVER_PORT: 8502
+      STREAMLIT_SERVER_HEADLESS: "true"
+    ports:
+      - "8502:8502"
+    volumes:
+      - ./modules:/app/modules
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - integra_network
+    restart: unless-stopped
+    command: ["streamlit", "run", "admin_panel.py", "--server.port=8502", "--server.address=0.0.0.0"]
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  integra_network:
+    driver: bridge
