@@ -21,12 +21,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wkhtmltopdf \
     curl \
-    xfonts-75dpi \
-    xfonts-96dpi \
-    xfonts-base \
-    xfonts-encodings \
-    libfontconfig1 \
     fontconfig \
+    libfontconfig1 \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar Python packages compilados desde builder
