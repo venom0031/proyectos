@@ -1,5 +1,5 @@
 # Multi-stage build para reducir tamaño
-FROM python:3.12-slim as builder
+FROM python:3.11-slim-bookworm as builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
 # Stage final
-FROM python:3.12-slim
+FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
