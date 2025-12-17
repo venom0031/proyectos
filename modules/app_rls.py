@@ -436,10 +436,10 @@ with tab_matrix:
         <meta charset="utf-8" />
         <style>
     body { background: #fff; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; }
-    .pdf-table-container { width: 100%; margin: 0; padding: 0; overflow: visible; }
-    table { border-collapse: collapse; width: 100%; background: #fff; font-size: 11px; table-layout: auto; }
-    th, td { border: 1px solid #00C853 !important; padding: 5px 6px; text-align: center; white-space: nowrap; }
-    th { background: #E2EFDA; color: #222; font-weight: bold; font-size: 10px; }
+    .pdf-table-container { width: 100%; margin: 0; padding: 0; }
+    table { border-collapse: collapse; width: 100%; background: #fff; font-size: 13px; }
+    th, td { border: 2px solid #00C853 !important; padding: 6px; text-align: center; }
+    th { background: #E2EFDA; color: #222; font-weight: bold; }
         .col-decimal { font-variant-numeric: tabular-nums; }
         .col-pesos { color: #1565C0; font-weight: bold; }
         .col-pct { color: #D84315; font-weight: bold; }
@@ -490,21 +490,20 @@ with tab_matrix:
             return
         
         # Opción 3: Generar PDF
+        # TODO: Optimizar para tablas anchas - actualmente usa A4 landscape
+        # El PDF puede quedar cortado si la tabla tiene muchas columnas
         try:
             config = get_pdfkit_config()
-            # Opciones para tabla ancha: página personalizada muy ancha
             options = {
-                'page-width': '500mm',  # Ancho personalizado muy grande
-                'page-height': '297mm',  # Alto A4 landscape
+                'page-size': 'A4',
                 'orientation': 'Landscape',
-                'margin-top': '5mm',
-                'margin-right': '5mm',
-                'margin-bottom': '5mm',
-                'margin-left': '5mm',
+                'margin-top': '0.5in',
+                'margin-right': '0.5in',
+                'margin-bottom': '0.5in',
+                'margin-left': '0.5in',
                 'encoding': "UTF-8",
                 'no-outline': None,
                 'enable-local-file-access': None,
-                'disable-smart-shrinking': None,
             }
             pdf_bytes = pdfkit.from_string(html, False, options=options, configuration=config)
             st.download_button(
