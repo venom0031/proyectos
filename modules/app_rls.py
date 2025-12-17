@@ -435,11 +435,11 @@ with tab_matrix:
         <head>
         <meta charset="utf-8" />
         <style>
-        body { background: #fff; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; }
-        .pdf-table-container { width: 100%; margin: 0; padding: 0; overflow: visible; }
-        table { border-collapse: collapse; width: 100%; background: #fff; font-size: 9px; table-layout: auto; }
-        th, td { border: 1px solid #00C853 !important; padding: 3px 4px; text-align: center; white-space: nowrap; }
-        th { background: #E2EFDA; color: #222; font-weight: bold; font-size: 8px; }
+    body { background: #fff; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; }
+    .pdf-table-container { width: 100%; margin: 0; padding: 0; overflow: visible; }
+    table { border-collapse: collapse; width: 100%; background: #fff; font-size: 10px; table-layout: auto; }
+    th, td { border: 1px solid #00C853 !important; padding: 4px 5px; text-align: center; white-space: nowrap; }
+    th { background: #E2EFDA; color: #222; font-weight: bold; font-size: 9px; }
         .col-decimal { font-variant-numeric: tabular-nums; }
         .col-pesos { color: #1565C0; font-weight: bold; }
         .col-pct { color: #D84315; font-weight: bold; }
@@ -496,16 +496,14 @@ with tab_matrix:
             options = {
                 'page-size': 'A3',  # Más ancho que A4
                 'orientation': 'Landscape',
-                'margin-top': '5mm',
-                'margin-right': '5mm',
-                'margin-bottom': '5mm',
-                'margin-left': '5mm',
+                'margin-top': '10mm',
+                'margin-right': '10mm',
+                'margin-bottom': '10mm',
+                'margin-left': '10mm',
                 'encoding': "UTF-8",
                 'no-outline': None,
                 'enable-local-file-access': None,
-                'zoom': '0.75',  # Zoom out para que quepa la tabla completa
-                'dpi': '150',
-                'disable-smart-shrinking': None,
+                'dpi': '96',
             }
             pdf_bytes = pdfkit.from_string(html, False, options=options, configuration=config)
             st.download_button(
