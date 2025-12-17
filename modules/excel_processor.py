@@ -434,6 +434,17 @@ class ExcelProcessor:
                     SET {', '.join([f'{col} = EXCLUDED.{col}' for col in valores.keys()] + ['fecha_inicio = EXCLUDED.fecha_inicio', 'fecha_fin = EXCLUDED.fecha_fin'])}
                 """, tuple(vals))
                 count += 1
+                
+                # NUEVO: Si tenemos superficie, actualizar también en la tabla establecimientos
+                # para que esté disponible como dato maestro
+                if 'superficie_pradera' in valores and valores['superficie_pradera'] is not None:
+                    superficie_val = valores['superficie_pradera']
+                    execute_update("""
+                        UPDATE establecimientos 
+                        SET superficie_praderas = %s 
+                        WHERE id = %s
+                    """, (superficie_val, est_id))
+                    self.logs.append(f"Superficie actualizada para '{est_nombre}': {superficie_val} ha")
 
         return count
 
