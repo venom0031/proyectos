@@ -1,14 +1,30 @@
-# # Script final para ejecutar la app
+# Script final para ejecutar la app
 
 Write-Host "===============================================" -ForegroundColor Green
 Write-Host "Ejecutando Streamlit con RLS" -ForegroundColor Green  
 Write-Host "===============================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "Password BD: admin" -ForegroundColor Cyan
-Write-Host ""
 
-# Setear variables de entorno
-$env:DB_PASSWORD = "admin"
+# Cargar variables desde .env si existe
+if (Test-Path .env) {
+    Write-Host "Cargando variables desde .env..." -ForegroundColor Yellow
+    Get-Content .env | Where-Object { $_ -match '=' -and -not ($_ -match '^#') } | ForEach-Object {
+        $key, $value = $_ -split '=', 2
+        # Remover comillas si existen
+        $value = $value.Trim().Trim('"').Trim("'")
+        $env_key = $key.Trim()
+        
+        # Setear variable de entorno
+        [System.Environment]::SetEnvironmentVariable($env_key, $value, [System.EnvironmentVariableTarget]::Process)
+    }
+} else {
+    Write-Host "ADVERTENCIA: No se encontró archivo .env. Usando defaults inseguros." -ForegroundColor Red
+    $env:DB_PASSWORD = "admin"
+}
+
+Write-Host "DB User: $env:DB_USER" -ForegroundColor Gray
+Write-Host "DB Name: $env:DB_NAME" -ForegroundColor Gray
+Write-Host ""
 
 # Matar streamlit prev si existe
 $streamlit_procs = Get-Process -Name "streamlit" -ErrorAction SilentlyContinue

@@ -34,7 +34,7 @@ cd scripts
 ./init.sh   # Linux/Mac
 
 # 6. Ejecutar aplicación
-streamlit run app.py
+streamlit run modules/app_rls.py
 
 # 7. Panel de administración (solo admin)
 streamlit run admin_panel.py
@@ -44,7 +44,7 @@ streamlit run admin_panel.py
 
 ```
 streamlit_app/
-├── app.py                  # Aplicación principal (usuarios)
+├── modules/app_rls.py      # Aplicación principal (usuarios)
 ├── admin_panel.py          # Panel de administración
 ├── requirements.txt
 ├── .env.example
@@ -53,24 +53,7 @@ streamlit_app/
 │
 ├── modules/               # Módulos Python
 │   ├── auth.py           # Autenticación
-│   ├── config.py         # Configuración
-│   ├── db_connection.py  # Conexión BD
-│   ├── etl.py            # Procesamiento datos
-│   ├── matrix_builder.py # Construcción matriz
-│   └── concept_engine.py # Mapeo conceptos
-│
-├── db/                   # Scripts SQL
-│   ├── schema.sql       # Esquema completo
-│   ├── init_db.sql      # Inicialización
-│   └── load_sample.sql  # Datos de prueba
-│
-├── data/                # Templates Excel
-│   ├── template_semanal.xlsx
-│   └── template_historico.xlsx
-│
-└── scripts/             # Scripts utilidad
-    ├── init.ps1        # Inicializar BD
-    └── backup.sh       # Backup automático
+│   ├── ...
 ```
 
 ## 👥 Usuarios
@@ -158,7 +141,7 @@ copy .env.example .env
 # Editar .env con credenciales
 
 # 4. Ejecutar aplicación
-streamlit run app.py
+streamlit run modules/app_rls.py
 
 # Panel admin (otra terminal)
 streamlit run admin_panel.py

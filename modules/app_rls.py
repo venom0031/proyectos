@@ -436,9 +436,9 @@ with tab_matrix:
         <meta charset="utf-8" />
         <style>
     body { background: #fff; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; }
-    .pdf-table-container { width: 100%; margin: 0; padding: 0; }
-    table { border-collapse: collapse; width: 100%; background: #fff; font-size: 13px; }
-    th, td { border: 2px solid #00C853 !important; padding: 6px; text-align: center; }
+    .pdf-table-container { width: 100%; margin: 0 auto; text-align: center; }
+    table { border-collapse: collapse; width: 98%; margin: 0 auto; background: #fff; font-size: 11px; }
+    th, td { border: 1.5px solid #00C853 !important; padding: 4px; text-align: center; }
     th { background: #E2EFDA; color: #222; font-weight: bold; }
         .col-decimal { font-variant-numeric: tabular-nums; }
         .col-pesos { color: #1565C0; font-weight: bold; }
@@ -497,10 +497,10 @@ with tab_matrix:
             options = {
                 'page-size': 'A4',
                 'orientation': 'Landscape',
-                'margin-top': '0.5in',
-                'margin-right': '0.5in',
-                'margin-bottom': '0.5in',
-                'margin-left': '0.5in',
+                'margin-top': '0.25in',
+                'margin-right': '0.25in',
+                'margin-bottom': '0.25in',
+                'margin-left': '0.25in',
                 'encoding': "UTF-8",
                 'no-outline': None,
                 'enable-local-file-access': None,
