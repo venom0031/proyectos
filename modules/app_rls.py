@@ -426,8 +426,10 @@ with tab_matrix:
 
     def df_to_html(df):
         # Usar pandas Styler para formato visual idéntico
-        if hasattr(df, 'render'):  # Si es un Styler
-            html = df.render()
+        if hasattr(df, 'hide'):  # Si es un Styler (pandas >= 1.4)
+            html = df.hide(axis='index').to_html()
+        elif hasattr(df, 'render'):  # Styler antiguo
+            html = df.hide_index().render()
         else:
             html = df.to_html(index=False, border=0, escape=False)
         template = Template('''
