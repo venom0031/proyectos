@@ -265,13 +265,8 @@ def show_login_form():
                             else:
                                 st.error("Usuario o contraseña incorrectos")
         
-        with st.expander("ℹ️ Usuarios de prueba"):
-            st.markdown("""
-            **Usuarios disponibles:**
-            - `admin` / `admin123` (administrador)
-            - `user_eduvigis` / `test123`
-            - `user_lagos` / `test123`
-            """)
+        # NOTA: Credenciales de prueba removidas para producción
+        # Ver documentación docs/INSTALACION.md para usuarios de prueba en desarrollo
 
 
 def show_user_info():

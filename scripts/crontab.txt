@@ -1,0 +1,24 @@
+# =====================================================
+# Configuración de Cron para Backups Automáticos
+# =====================================================
+# Instalar en el VPS con: crontab -e
+# O copiar a /etc/cron.d/integra-backup
+# =====================================================
+
+# Variables de entorno
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+BACKUP_DIR=/opt/integra/backups
+DB_CONTAINER=integra_db
+DB_NAME=integra_rls
+DB_USER=postgres
+RETENTION_DAYS=7
+
+# Backup diario a las 3:00 AM
+0 3 * * * root cd /opt/integra && ./scripts/backup-db.sh >> /var/log/integra-backup.log 2>&1
+
+# Backup adicional los domingos a las 2:00 AM (retención 30 días)
+0 2 * * 0 root RETENTION_DAYS=30 cd /opt/integra && ./scripts/backup-db.sh >> /var/log/integra-backup.log 2>&1
+
+# Limpiar logs de backup cada mes
+0 0 1 * * root find /var/log -name "integra-backup.log*" -mtime +30 -delete
