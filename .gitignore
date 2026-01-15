@@ -54,3 +54,5 @@ data/*.csv
 temp/
 tmp/
 *.tmp
+_obsolete/
+deploy_temp/
